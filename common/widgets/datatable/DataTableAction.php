@@ -123,6 +123,11 @@ class DataTableAction extends Action
 		$order = $this->getParam('order', []);
 		// Apply filter and order
 		$filterQuery = $this->applyFilter($filterQuery, $columns, $search);
+		// Detect whether any filter actually added a WHERE. applyFilter() only appends conditions via
+		// andFilterWhere()/orFilterWhere() (which no-op on empty values), so a still-null where means
+		// "no active filter" — then recordsFiltered == recordsTotal and the second count is skipped.
+		// Must be captured BEFORE the base query's where is copied back in below.
+		$filterAddedWhere = ($filterQuery->where !== null);
 		$filterQuery = $this->applyOrder($filterQuery, $columns, $order);
 		// Add extra condition
 		if (!empty($originalQuery->where)) {
@@ -141,13 +146,48 @@ class DataTableAction extends Action
 		]);
 		// Set the response format as JSON
 		Yii::$app->response->format = Response::FORMAT_JSON;
+		// recordsTotal is the unfiltered base count; recordsFiltered reuses it when no filter is
+		// active (mathematically equal), otherwise it counts the filtered query. Feed the result
+		// to the data provider so it does not run another count of its own.
+		$recordsTotal = $this->getRecordsTotal($originalQuery);
+		$recordsFiltered = $filterAddedWhere ? $this->getRecordsFiltered($filterQuery) : $recordsTotal;
+		$dataProvider->setTotalCount($recordsFiltered);
         $response = [
             'draw' => (int)$draw,
-            'recordsTotal' => (int)$originalQuery->count(),
-            'recordsFiltered' => (int)$dataProvider->getTotalCount(),
+            'recordsTotal' => $recordsTotal,
+            'recordsFiltered' => $recordsFiltered,
             'data' => $this->formatData($filterQuery, $columns),
         ];
 		return $this->formatResponse($response);
+	}
+
+	/**
+	 * Returns the total number of records for the unfiltered base query.
+	 *
+	 * Subclasses may override this to provide a cheaper count (e.g. one that omits joins not needed
+	 * for counting). The default reproduces the original behaviour exactly.
+	 *
+	 * @param ActiveQuery $originalQuery
+	 * @return int
+	 */
+	protected function getRecordsTotal($originalQuery)
+	{
+		return (int) $originalQuery->count();
+	}
+
+	/**
+	 * Returns the number of records matching the active filters.
+	 *
+	 * Subclasses may override this to provide a cheaper count. The default mirrors what
+	 * ActiveDataProvider::prepareTotalCount() computes for the filtered query, so the result is
+	 * identical to the previous $dataProvider->getTotalCount() call.
+	 *
+	 * @param ActiveQuery $filteredQuery
+	 * @return int
+	 */
+	protected function getRecordsFiltered($filteredQuery)
+	{
+		return (int) (clone $filteredQuery)->limit(-1)->offset(-1)->orderBy([])->count('*');
 	}
 
 	/**

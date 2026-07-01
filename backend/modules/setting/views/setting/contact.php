@@ -4,6 +4,8 @@
 /* @var $model backend\modules\setting\models\ContactSettingForm */
 /* @var $form backend\widgets\ActiveForm */
 
+use borales\extensions\phoneInput\PhoneInput;
+use common\components\PhoneInputConfig;
 use common\models\Country;
 use backend\widgets\ActiveForm;
 use kartik\select2\Select2;
@@ -35,7 +37,10 @@ $this->params['breadcrumbs'] = [
 	<div class="panel-body">
 		<div class="row">
 			<div class="col-sm-4">
-				<?= $form->field($model, 'mobilePhone')->input('tel') ?>
+				<?= $form->field($model, 'mobilePhone')->widget(PhoneInput::class, [
+					'jsOptions' => PhoneInputConfig::jsOptions(),
+					'options' => PhoneInputConfig::inputClassOptions(),
+				]) ?>
 			</div>
 			<div class="col-sm-4">
 				<?= $form->field($model, 'fixedPhone')->input('tel') ?>

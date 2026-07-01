@@ -2,6 +2,7 @@
 
 namespace backend\modules\subscriber\models;
 
+use borales\extensions\phoneInput\PhoneInputValidator;
 use common\models\Subscriber;
 use common\models\Template;
 use common\models\User;
@@ -87,6 +88,7 @@ class SubscriberForm extends Subscriber
 			[['first_name', 'last_name', 'email', 'phone', 'gender'], 'required'],
 			[['first_name', 'middle_name', 'last_name', 'email', 'phone'], 'string', 'max' => 255],
 			[['first_name', 'middle_name', 'last_name', 'email', 'phone'], 'trim'],
+			['phone', PhoneInputValidator::class, 'skipOnEmpty' => true],
 			[['email'], 'email'],
 			[['gender'], 'integer'],
 			[['gender'], 'in', 'range' => [static::GENDER_MALE, static::GENDER_FEMALE]],

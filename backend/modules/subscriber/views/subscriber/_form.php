@@ -5,6 +5,8 @@
 /* @var $model common\models\Subscriber */
 
 use backend\widgets\ActiveForm;
+use borales\extensions\phoneInput\PhoneInput;
+use common\components\PhoneInputConfig;
 use common\models\User;
 use tws\widgets\datetimepicker\DateTimePicker;
 use kartik\file\FileInput;
@@ -119,21 +121,24 @@ use yii\helpers\Json;
 					]) ?>
 				</div>
 				<div class="col-md-4">
-					<?= $form->field($model, 'phone')->input('tel', [
-						'data' => [
-							'autofill-target' => '#' . mb_strtolower($model->formName()),
-							'autofill-url' => Url::to(['/subscriber-manager/subscriber/find-existing-users']),
-							'autofill-method' => 'POST',
-							'autofill-clear-invalid' => 'false',
-							'autofill-clear-empty' => 'false',
-							'autofill-data' => Json::encode([
-								'data.email' => '#' . Html::getInputId($model, 'email'),
-								'data.gender' => '#' . Html::getInputId($model, 'gender'),
-								'data.first_name' => '#' . Html::getInputId($model, 'first_name'),
-								'data.middle_name' => '#' . Html::getInputId($model, 'middle_name'),
-								'data.last_name' => '#' . Html::getInputId($model, 'last_name'),
-							]),
-						],
+					<?= $form->field($model, 'phone')->widget(PhoneInput::class, [
+						'jsOptions' => PhoneInputConfig::jsOptions(),
+						'options' => array_merge(PhoneInputConfig::inputClassOptions(), [
+							'data' => [
+								'autofill-target' => '#' . mb_strtolower($model->formName()),
+								'autofill-url' => Url::to(['/subscriber-manager/subscriber/find-existing-users']),
+								'autofill-method' => 'POST',
+								'autofill-clear-invalid' => 'false',
+								'autofill-clear-empty' => 'false',
+								'autofill-data' => Json::encode([
+									'data.email' => '#' . Html::getInputId($model, 'email'),
+									'data.gender' => '#' . Html::getInputId($model, 'gender'),
+									'data.first_name' => '#' . Html::getInputId($model, 'first_name'),
+									'data.middle_name' => '#' . Html::getInputId($model, 'middle_name'),
+									'data.last_name' => '#' . Html::getInputId($model, 'last_name'),
+								]),
+							],
+						]),
 					]) ?>
 				</div>
 				<div class="col-md-4">

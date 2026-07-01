@@ -2,6 +2,7 @@
 
 namespace backend\modules\marketing\models;
 
+use borales\extensions\phoneInput\PhoneInputValidator;
 use common\models\MarketingGroup;
 use common\models\MarketingRecipient;
 use Yii;
@@ -33,6 +34,7 @@ class MarketingRecipientForm extends MarketingRecipient
 	{
 		return ArrayHelper::merge(parent::rules(), [
 			[['first_name', 'last_name', 'email', 'phone', 'status'], 'required'],
+			['phone', PhoneInputValidator::class, 'skipOnEmpty' => true],
 			[['email'], 'email'],
             [['marketing_group_id'], 'each', 'rule' => ['exist', 'targetClass' => MarketingGroup::class, 'targetAttribute' => ['marketing_group_id' => 'id'], 'skipOnError' => true]],
 		]);

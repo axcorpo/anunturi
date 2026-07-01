@@ -1,6 +1,25 @@
 // WIDGETS / BREADCRUMB
 // ------------------------------------
 
+// Sticky page bar: keep the breadcrumbs pinned just below the 50px fixed header
+// while content scrolls. Color is preserved (the theme's #fafafa page-bar), only
+// the positioning changes. z-index stays under the header so its dropdowns still
+// overlay the bar.
+//
+// Only >=992px: below that the theme switches the header to position:relative, so
+// a top:50px sticky bar would float mid-viewport; leave it in static flow there.
+@media (min-width: 992px) {
+	.page-content .page-bar {
+		position: -webkit-sticky;
+		position: sticky;
+		top: 50px;
+		z-index: 9990;
+		// Force the existing page-bar color as a solid background so scrolled
+		// content doesn't show through once the bar sticks.
+		background-color: #fafafa;
+	}
+}
+
 .page-breadcrumb {
 	& > li:not(:last-child):after {
 		content: none;

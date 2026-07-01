@@ -2,6 +2,7 @@
 
 namespace frontend\modules\account\models;
 
+use borales\extensions\phoneInput\PhoneInputValidator;
 use common\models\Country;
 use common\models\Subscriber;
 use common\models\User;
@@ -92,6 +93,7 @@ class ProfileForm extends User
 	{
 		return [
 			[['first_name', 'last_name', 'phone', 'gender'], 'required'],
+			['phone', PhoneInputValidator::class, 'skipOnEmpty' => true],
 			[['phone'], 'unique'],
 			[['gender'], 'integer'],
 			['gender', 'in', 'range' => [1, 2]],

@@ -2,6 +2,7 @@
 
 namespace backend\modules\setting\models;
 
+use borales\extensions\phoneInput\PhoneInputValidator;
 use common\models\Setting;
 use Yii;
 use yii\base\Model;
@@ -127,6 +128,7 @@ class ContactSettingForm extends Setting
 		return [
 			[['firstName', 'middleName', 'lastName', 'company', 'registrationNumber', 'tin', 'mobilePhone', 'fixedPhone', 'fax', 'email', 'newsletterEmail', 'streetName', 'streetNumber', 'locality', 'zipCode', 'county', 'country', 'latitude', 'longitude'], 'string'],
 			[['firstName', 'middleName', 'lastName', 'company', 'registrationNumber', 'tin', 'mobilePhone', 'fixedPhone', 'fax', 'email', 'newsletterEmail', 'streetName', 'streetNumber', 'locality', 'zipCode', 'county', 'country', 'latitude', 'longitude'], 'trim'],
+			['mobilePhone', PhoneInputValidator::class, 'skipOnEmpty' => true],
 			[['schedule'], 'each', 'rule' => ['trim']],
 		];
 	}

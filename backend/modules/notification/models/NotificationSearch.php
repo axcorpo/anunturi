@@ -58,6 +58,40 @@ class NotificationSearch extends DataTableAction
 
 	/**
 	 * @inheritdoc
+	 *
+	 * Lean count: the grid query LEFT JOINs `userHasNotifications` (one-to-many) and GROUP BYs
+	 * `n.id`, which makes Yii wrap the row count as `SELECT COUNT(*) FROM (<grouped join>) c`. Drop
+	 * the GROUP BY and count `COUNT(DISTINCT n.id)` instead — exact because every join is a LEFT join
+	 * that cannot drop a notification row, and far cheaper (no derived-table materialization). The
+	 * `uhn` join is kept because the base WHERE filters on `uhn.user_id`.
+	 */
+	protected function getRecordsTotal($originalQuery)
+	{
+		return (int) (clone $originalQuery)
+			->select(new Expression('COUNT(DISTINCT n.id)'))
+			->groupBy([])
+			->orderBy([])
+			->limit(-1)
+			->offset(-1)
+			->scalar();
+	}
+
+	/**
+	 * @inheritdoc Lean `COUNT(DISTINCT n.id)` over the filtered grid query — see {@see getRecordsTotal()}.
+	 */
+	protected function getRecordsFiltered($filteredQuery)
+	{
+		return (int) (clone $filteredQuery)
+			->select(new Expression('COUNT(DISTINCT n.id)'))
+			->groupBy([])
+			->orderBy([])
+			->limit(-1)
+			->offset(-1)
+			->scalar();
+	}
+
+	/**
+	 * @inheritdoc
 	 */
 	public function formatData(ActiveQuery $query, $columns)
 	{

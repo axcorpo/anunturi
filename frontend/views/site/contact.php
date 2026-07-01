@@ -5,6 +5,8 @@
 /* @var $address string */
 /* @var $map dosamigos\google\maps\Map */
 
+use borales\extensions\phoneInput\PhoneInput;
+use common\components\PhoneInputConfig;
 use yii\bootstrap\ActiveForm;
 use yii\helpers\Html;
 use yii\widgets\Breadcrumbs;
@@ -76,7 +78,10 @@ $this->params['breadcrumbs'][] = Html::encode($this->title);
 						<?= $form->field($model, 'email')->input('email') ?>
 					</div>
 					<div class="col-md-6">
-						<?= $form->field($model, 'phone')->input('tel') ?>
+						<?= $form->field($model, 'phone')->widget(PhoneInput::class, [
+							'jsOptions' => PhoneInputConfig::jsOptions(),
+							'options' => PhoneInputConfig::inputClassOptions(),
+						]) ?>
 					</div>
 				</div>
 				<?= $form->field($model, 'subject')->textInput() ?>

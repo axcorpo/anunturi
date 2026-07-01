@@ -4,6 +4,8 @@
 /* @var $form common\widgets\ActiveForm */
 /* @var $model common\models\Reservation */
 
+use borales\extensions\phoneInput\PhoneInput;
+use common\components\PhoneInputConfig;
 use common\helpers\UrlHelper;
 use common\models\Announcement;
 use common\models\Currency;
@@ -103,7 +105,10 @@ use yii\web\JsExpression;
                 ]) ?>
             </div>
             <div class="col-sm-4">
-                <?= $form->field($model, 'phone')->input('tel') ?>
+                <?= $form->field($model, 'phone')->widget(PhoneInput::class, [
+                    'jsOptions' => PhoneInputConfig::jsOptions(),
+                    'options' => PhoneInputConfig::inputClassOptions(),
+                ]) ?>
             </div>
             <div class="col-sm-4">
                 <?= $form->field($model, 'details')->input('tel') ?>

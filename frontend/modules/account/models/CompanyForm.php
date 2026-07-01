@@ -2,6 +2,7 @@
 
 namespace frontend\modules\account\models;
 
+use borales\extensions\phoneInput\PhoneInputValidator;
 use common\models\Company;
 use common\models\CompanyTranslation;
 use common\models\Language;
@@ -59,6 +60,7 @@ class CompanyForm extends Company
 	{
 		return ArrayHelper::merge(parent::rules(), [
 			[['registration_number', 'tin', 'name', 'status', 'email', 'phone'], 'required'],
+			['phone', PhoneInputValidator::class, 'skipOnEmpty' => true],
             [['activity', 'keywords', 'description', 'content'], 'each', 'rule' => ['trim']],
             [['schedule'], 'each', 'rule' => ['default', 'value' => null]],
         ]);

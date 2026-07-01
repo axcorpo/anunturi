@@ -2,6 +2,8 @@
 /* @var $this yii\web\View */
 /* @var $model common\models\User */
 
+use borales\extensions\phoneInput\PhoneInput;
+use common\components\PhoneInputConfig;
 use common\models\Auth;
 use common\models\Country;
 use common\models\Page;
@@ -185,7 +187,10 @@ $this->params['breadcrumbs'][] = Html::encode($this->title);
 						</div>
 						<div class="row">
 							<div class="col-md-4">
-								<?= $form->field($model, 'phone')->input('tel') ?>
+								<?= $form->field($model, 'phone')->widget(PhoneInput::class, [
+									'jsOptions' => PhoneInputConfig::jsOptions(),
+									'options' => PhoneInputConfig::inputClassOptions(),
+								]) ?>
 							</div>
 							<div class="col-md-4">
 								<?= $form->field($model, 'pin')->textInput() ?>

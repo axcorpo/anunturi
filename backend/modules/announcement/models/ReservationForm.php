@@ -2,6 +2,7 @@
 
 namespace backend\modules\announcement\models;
 
+use borales\extensions\phoneInput\PhoneInputValidator;
 use common\helpers\ModelHelper;
 use common\helpers\UploadHelper;
 use common\models\Category;
@@ -34,7 +35,7 @@ class ReservationForm extends Reservation
 	public function rules()
 	{
 		return ArrayHelper::merge(parent::rules(), [
-
+			['phone', PhoneInputValidator::class, 'skipOnEmpty' => true],
         ]);
 	}
 

@@ -2,6 +2,7 @@
 
 namespace frontend\models;
 
+use borales\extensions\phoneInput\PhoneInputValidator;
 use Yii;
 use yii\base\Model;
 
@@ -49,6 +50,7 @@ class ContactForm extends Model
 	{
 		return [
 			[['name', 'email', 'phone', 'subject', 'message'], 'required'],
+			['phone', PhoneInputValidator::class, 'skipOnEmpty' => true],
 			['email', 'email'],
 			['workEmail', 'safe'],
             ['captchaResponse', 'safe'],

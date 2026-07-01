@@ -916,3 +916,14 @@ body.overlay-context > .overlay-wrapper {
 	margin-top: 0.9375em;
 	padding-top: 0.9375em;
 	border-top: 1px dotted #9d9d9d; }
+
+/* borales/yii2-phone-input (intl-tel-input): keep phone inputs at their previous full width */
+.iti {
+    display: block;
+    width: 100%;
+}
+.iti > input,
+.iti > input[type="tel"] {
+    width: 100%;
+    box-sizing: border-box;
+}

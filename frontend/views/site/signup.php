@@ -2,6 +2,8 @@
 /* @var $this yii\web\View */
 /* @var $model common\models\SignupForm */
 
+use borales\extensions\phoneInput\PhoneInput;
+use common\components\PhoneInputConfig;
 use common\models\FeatureModule;
 use common\models\Package;
 use common\models\Feature;
@@ -66,7 +68,10 @@ use yii\helpers\Html;
                                 <?= $form->field($model, 'email')->input('email') ?>
                             </div>
                             <div class="col-md-4">
-                                <?= $form->field($model, 'phone')->input('tel') ?>
+                                <?= $form->field($model, 'phone')->widget(PhoneInput::class, [
+                                    'jsOptions' => PhoneInputConfig::jsOptions(),
+                                    'options' => PhoneInputConfig::inputClassOptions(),
+                                ]) ?>
                             </div>
                             <div class="col-md-4">
                                 <?= $form->field($model, 'password')->passwordInput(['autocomplete' => 'new-password']) ?>

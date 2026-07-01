@@ -139,10 +139,11 @@ $paymentProcessorLabels = PaymentMetadata::getPaymentProcessorLabels();
 						</div>
 						<div class="row">
 							<div class="col-lg-6">
-								<?= $form->field($model, 'stripePrivateKey')->textInput()->hint(Yii::t('backend', 'The API private key.') . ' ' . Yii::t('common', 'Example') . ': sk_test_abcdefghijklmnopqrstuvwxyz') ?>
+								<?php $secretFieldTemplate = '{label}<div class="input-secret">{input}<span class="toggle-secret fa fa-eye-slash"></span></div>{hint}{error}'; ?>
+								<?= $form->field($model, 'stripePrivateKey', ['template' => $secretFieldTemplate])->passwordInput()->hint(Yii::t('backend', 'The API private key.') . ' ' . Yii::t('common', 'Example') . ': sk_test_abcdefghijklmnopqrstuvwxyz') ?>
 							</div>
 							<div class="col-lg-6">
-								<?= $form->field($model, 'stripePublicKey')->textInput()->hint(Yii::t('backend', 'The API public key.') . ' ' . Yii::t('common', 'Example') . ': pk_test_abcdefghijklmnopqrstuvwxyz') ?>
+								<?= $form->field($model, 'stripePublicKey', ['template' => $secretFieldTemplate])->passwordInput()->hint(Yii::t('backend', 'The API public key.') . ' ' . Yii::t('common', 'Example') . ': pk_test_abcdefghijklmnopqrstuvwxyz') ?>
 							</div>
 						</div>
 					</div>

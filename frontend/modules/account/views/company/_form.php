@@ -3,6 +3,8 @@
 /* @var $form common\widgets\ActiveForm */
 /* @var $model common\models\Company */
 
+use borales\extensions\phoneInput\PhoneInput;
+use common\components\PhoneInputConfig;
 use common\models\Country;
 use common\widgets\ActiveForm;
 use kartik\file\FileInput;
@@ -121,7 +123,10 @@ $shouldRenderModal = Yii::$app->request->isAjax;
                 <?= $form->field($model, 'email')->input('email') ?>
             </div>
             <div class="col-sm-4">
-                <?= $form->field($model, 'phone')->input('tel') ?>
+                <?= $form->field($model, 'phone')->widget(PhoneInput::class, [
+                    'jsOptions' => PhoneInputConfig::jsOptions(),
+                    'options' => PhoneInputConfig::inputClassOptions(),
+                ]) ?>
             </div>
             <div class="col-sm-4">
                 <?= $form->field($model, 'fax')->input('tel') ?>

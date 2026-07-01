@@ -2,6 +2,7 @@
 
 namespace backend\modules\user\models;
 
+use borales\extensions\phoneInput\PhoneInputValidator;
 use common\models\AuthAssignment;
 use common\models\AuthItem;
 use common\models\Template;
@@ -51,6 +52,7 @@ class UserForm extends User
 			[['parent_id', 'gender', 'status'], 'integer'],
 			[['email', 'phone', 'first_name', 'middle_name', 'last_name', 'image'], 'string', 'max' => 255],
 			[['email', 'phone', 'first_name', 'middle_name', 'last_name'], 'trim'],
+			['phone', PhoneInputValidator::class, 'skipOnEmpty' => true],
 			[['email'], 'email'],
 			[['gender'], 'in', 'range' => [static::GENDER_MALE, static::GENDER_FEMALE]],
 			[['imageFile'], 'file', 'extensions' => Yii::$app->params['image.extensions'], 'mimeTypes' => Yii::$app->params['image.mimeTypes'], 'maxSize' => Yii::$app->settings->get('maxFileSize'), 'skipOnEmpty' => true],

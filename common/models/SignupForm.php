@@ -2,6 +2,7 @@
 
 namespace common\models;
 
+use borales\extensions\phoneInput\PhoneInputValidator;
 use Yii;
 use yii\base\Model;
 use tws\helpers\Url;
@@ -88,6 +89,7 @@ class SignupForm extends Model
 			[['first_name', 'last_name', 'email', 'phone', 'password', 'acceptTerms'], 'required'],
 			[['first_name', 'middle_name', 'last_name', 'email', 'phone'], 'string', 'max' => 255],
 			[['first_name', 'middle_name', 'last_name', 'email', 'phone'], 'trim'],
+			['phone', PhoneInputValidator::class, 'skipOnEmpty' => true],
 			['password', 'string', 'min' => 6],
 			['email', 'email'],
 			[['email', 'phone'], 'unique', 'targetClass' => 'common\models\User'],

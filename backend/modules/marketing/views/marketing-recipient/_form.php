@@ -4,6 +4,8 @@
 /* @var $form backend\widgets\ActiveForm */
 /* @var $model common\models\MarketingRecipient */
 
+use borales\extensions\phoneInput\PhoneInput;
+use common\components\PhoneInputConfig;
 use common\models\MarketingGroup;
 use common\models\MarketingRecipient;
 use backend\widgets\ActiveForm;
@@ -59,7 +61,10 @@ use yii\helpers\Json;
                 <?= $form->field($model, 'email')->input('email') ?>
             </div>
 			<div class="col-sm-6">
-				<?= $form->field($model, 'phone')->input('tel') ?>
+				<?= $form->field($model, 'phone')->widget(PhoneInput::class, [
+					'jsOptions' => PhoneInputConfig::jsOptions(),
+					'options' => PhoneInputConfig::inputClassOptions(),
+				]) ?>
 			</div>
 		</div>
         <div class="row">
