@@ -1,0 +1,22 @@
+// WIDGETS / FULLCALENDAR
+// ------------------------------------
+
+.fullcalendar {
+	.fc-content {
+		min-height: 25px;
+		line-height: 25px;
+	}
+	.fc-event-actions {
+		position: absolute;
+		right: 0;
+		top: 0;
+		display: none;
+	}
+	.fc-event {
+		&:hover {
+			.fc-event-actions {
+				display: inline-block;
+			}
+		}
+	}
+}

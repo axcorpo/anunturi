@@ -1,0 +1,70 @@
+// WIDGETS / CAROUSELS
+// ------------------------------------
+
+.carousel-container {
+	.carousel-pagination {
+		& > .swiper-pagination-bullet {
+			width: em(14px);
+			height: em(14px);
+			margin: 0 em(5px);
+			border: 1px solid $color-grey;
+			border-radius: 0;
+			background: $color-white;
+			&:hover,
+			&:focus {
+				background-color: $color-light-grey;
+			}
+			&.swiper-pagination-bullet-active {
+				border-color: $color-default;
+				background: $color-default;
+			}
+		}
+	}
+}
+.carousel-navigation {
+	font-size: em(32px);
+	& > .carousel-navigation-prev,
+	& > .carousel-navigation-next {
+		background: none;
+		color: inherit;
+		transition: all 0.5s ease;
+		&:before {
+			font-family: 'FontAwesome', 'Glyphicons Halflings';
+		}
+		&:after {
+			content: none;
+		}
+	}
+	& > .carousel-navigation-prev:before {
+		content: '\f104';
+	}
+	& > .carousel-navigation-next:before {
+		content: '\f105';
+	}
+}
+
+.carousel-caption {
+	padding-top: 0;
+	color: inherit;
+	text-shadow: none;
+	.caption-item {
+		opacity: 0;
+		&.animated {
+			opacity: 1;
+		}
+		& + .caption-item {
+			margin-top: em(20px);
+		}
+	}
+}
+
+
+// Custom Carousels
+.carousel-pricing {
+	.carousel-container {
+		margin-bottom: em(-32px);
+	}
+	.carousel-item {
+		padding-bottom: em(32px);
+	}
+}

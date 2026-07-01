@@ -1,0 +1,14 @@
+// COMPONENTS / RATING
+// ------------------------------------
+.rating-container {
+	&.rating-xxs {
+		font-size: 1.5em;
+	}
+	.filled-stars {
+		text-shadow: none;
+		-webkit-text-stroke: 1px rgba(0, 0, 0, 0.2);
+	}
+	.star {
+		margin: 0 2px;
+	}
+}

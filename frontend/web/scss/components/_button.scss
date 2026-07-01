@@ -1,0 +1,349 @@
+// COMPONENTS / BUTTON
+// ------------------------------------
+
+.btn {
+	padding: em(15px) em(20px) em(15px) em(20px);
+	border: 1px solid transparent;
+	border-radius: 0;
+	font-size: inherit;
+	font-weight: 600;
+	line-height: 1;
+	white-space: normal;
+	text-transform: uppercase;
+
+	&:focus {
+		outline: none !important;
+	}
+	&:hover,
+	&:focus {
+		color: inherit;
+	}
+	&:active:before {
+		box-shadow: inset 0 0 em(20px) em(2px) rgba($color-black, 0.1);
+	}
+
+	// Size
+	&.btn-xs {
+		padding: 0.3rem 0.6rem;
+	}
+	&.btn-sm {
+		padding: 0.6rem 0.9rem;
+	}
+	&.btn-md {
+		font-size: em(22px);
+		font-weight: 300;
+		padding: em(14px, 22px) em(28px, 22px);
+	}
+	&.btn-lg {
+		padding: 1rem 2rem;
+	}
+	&.btn-xlg {
+		padding: 2rem 4rem;
+	}
+
+	// Style
+	&.btn-rounded {
+		border-radius: 50%;
+		&:before {
+			border-radius: 50%;
+		}
+	}
+	&.btn-radius {
+		border-radius: em(5px);
+		&:before {
+			border-radius: em(5px);
+		}
+	}
+	&.btn-extra-radius {
+		border-radius: em(40px);
+		&:before {
+			border-radius: em(40px);
+		}
+	}
+	&.btn-nott {
+		text-transform: inherit;
+	}
+
+	// Type
+	&.btn-outline {
+		background-color: transparent;
+		border-width: 1px;
+		border-style: solid;
+	}
+}
+
+.btn-icon {
+	padding: 0;
+	margin: 0;
+	border: 0;
+	background-color: transparent;
+	//color: inherit;
+}
+
+// TODO: find a way to work all this. Change the colors eventually to have hover for full filled buttons
+/* Buttons Type */
+[class*="btn-slide-"] {
+	overflow: hidden;
+	position: relative;
+	z-index: 1;
+}
+[class*="btn-slide-"]::before {
+	content: '';
+	position: absolute;
+	z-index: -1;
+}
+.btn-slide-left::before,
+.btn-slide-center-h::before,
+.btn-slide-right::before {
+	width: 0%;
+	height: 100%;
+	top: 0;
+}
+.btn-slide-left::before {
+	right: 0;
+}
+.btn-slide-center-h::before {
+	left: 50%;
+	transform: translateX(-50%);
+}
+.btn-slide-right::before {
+	left: 0;
+}
+.btn-slide-left:hover::before,
+.btn-slide-left:focus::before,
+.btn-slide-center-h:hover::before,
+.btn-slide-center-h:focus::before,
+.btn-slide-right:hover::before,
+.btn-slide-right:focus::before {
+	width: 100%;
+}
+.btn-slide-up::before,
+.btn-slide-center-v::before,
+.btn-slide-down::before {
+	width: 100%;
+	height: 0%;
+	left: 0;
+}
+.btn-slide-up::before {
+	bottom: 0;
+}
+.btn-slide-center-v::before {
+	top: 50%;
+	transform: translateY(-50%);
+}
+.btn-slide-down::before {
+	top: 0;
+}
+.btn-slide-up:hover::before,
+.btn-slide-up:focus::before,
+.btn-slide-center-v:hover::before,
+.btn-slide-center-v:focus::before,
+.btn-slide-down:hover::before,
+.btn-slide-down:focus::before {
+	height: 100%;
+}
+/* Buttons UI */
+.btn-transparent {
+	background-color: transparent;
+}
+.btn-dark {
+	background-color: $color-black;
+	border-color: $color-black;
+	color: $color-white;
+}
+.btn-dark.btn-outline {
+	color: $color-black;
+}
+.btn-dark::before,
+.btn-dark:hover,
+.btn-dark:focus,
+.btn-dark:active:focus,
+.btn-dark:active {
+	background-color: $color-white;
+	border-color: $color-black;
+	color: $color-black;
+}
+
+.btn-light {
+	background-color: $color-light;
+	border-color: $color-light;
+	color: $color-black;
+}
+.btn-light.btn-outline {
+	color: $color-light;
+}
+.btn-light::before,
+.btn-light:hover,
+.btn-light:focus,
+.btn-light:active:focus,
+.btn-light:active {
+	background-color: $color-white;
+	border-color: $color-light;
+	color: $color-black;
+}
+
+.btn-white {
+	background-color: $color-white;
+	border-color: $color-white;
+	color: $color-black;
+}
+.btn-white.btn-outline {
+	color: $color-white;
+	&::before,
+	&:hover,
+	&:focus,
+	&:active:focus,
+	&:active {
+		background-color: $color-white;
+		color: $color-black;
+	}
+}
+.btn-white::before,
+.btn-white:hover,
+.btn-white:focus,
+.btn-white:active:focus,
+.btn-white:active {
+	background-color: $color-white;
+	border-color: $color-white;
+	color: $color-black;
+}
+
+.btn-default {
+	background-color: $color-default;
+	border-color: $color-default;
+	color: $color-white;
+}
+.btn-default.btn-outline {
+	color: $color-default;
+	&::before,
+	&:hover,
+	&:focus,
+	&:active:focus,
+	&:active {
+		background-color: $color-default;
+		color: $color-white;
+	}
+}
+.btn-default::before,
+.btn-default:hover,
+.btn-default:focus,
+.btn-default:active:focus,
+.btn-default:active {
+	background-color: $color-white;
+	border-color: $color-default;
+	color: $color-default;
+}
+
+.btn-primary {
+	background-color: $color-primary;
+	border-color: $color-primary;
+	color: $color-white;
+}
+.btn-primary.btn-outline {
+	color: $color-primary;
+}
+.btn-primary::before,
+.btn-primary:hover,
+.btn-primary:focus,
+.btn-primary:active:focus,
+.btn-primary.active {
+	background-color: $color-white;
+	border-color: $color-primary;
+	color: $color-black;
+}
+
+.btn-info {
+	background-color: $color-info;
+	border-color: $color-info;
+	color: $color-white;
+}
+.btn-info.btn-outline {
+	color: $color-info;
+}
+.btn-info::before,
+.btn-info:hover,
+.btn-info:focus,
+.btn-info:active:focus,
+.btn-info.active {
+	background-color: $color-white;
+	border-color: $color-info;
+	color: $color-black;
+}
+
+.btn-success {
+	background-color: $color-success;
+	border-color: $color-success;
+	color: $color-white;
+}
+.btn-success.btn-outline {
+	color: $color-success;
+}
+.btn-success::before,
+.btn-success:hover,
+.btn-success:focus,
+.btn-success:active:focus,
+.btn-success.active {
+	background-color: $color-white;
+	border-color: $color-success;
+	color: $color-black;
+}
+
+.btn-warning {
+	background-color: $color-warning;
+	border-color: $color-warning;
+	color: $color-white;
+}
+.btn-warning.btn-outline {
+	color: $color-warning;
+}
+.btn-warning::before,
+.btn-warning:hover,
+.btn-warning:focus,
+.btn-warning:active:focus,
+.btn-warning.active {
+	background-color: $color-white;
+	border-color: $color-warning;
+	color: $color-black;
+}
+
+.btn-danger {
+	background-color: $color-danger;
+	border-color: $color-danger;
+	color: $color-white;
+}
+.btn-danger.btn-outline {
+	color: $color-danger;
+}
+.btn-danger::before,
+.btn-danger:hover,
+.btn-danger:focus,
+.btn-danger:active:focus,
+.btn-danger.active {
+	background-color: $color-white;
+	border-color: $color-danger;
+	color: $color-black;
+}
+
+// Gradient buttons
+[class*="btn-grad"] {
+	&::before {
+		opacity: 0.6;
+	}
+}
+.btn-gradlinear-danger-primary {
+	background-image: linear-gradient(to right, $color-danger 0%, $color-primary 100%);
+	color: #fff;
+}
+.btn-gradlinear-success-primary {
+	background-image: linear-gradient(to right, $color-success 0%, $color-primary 100%);
+	color: #fff;
+}
+
+// Fav doctor
+.btn-fav-doctor {
+	&.is-favorite {
+		> .btn-fav-icon:before {
+			content: '\f21e';
+		}
+	}
+}

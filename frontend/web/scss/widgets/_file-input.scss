@@ -1,0 +1,39 @@
+// COMPONENTS / FILE INPUT
+// ------------------------------------
+
+.file-input {
+	.file-preview {
+		border-radius: 0;
+		border-color: $color-ctrl-border;
+	}
+	.file-preview-custom {
+		.file-preview-frame {
+			text-align: center;
+			.file-preview-image {
+				font-size: inherit;
+				width: 100% !important;
+				max-height: em(250px) !important;
+				display: inline-block;
+			}
+		}
+	}
+	.file-preview-frame-nofigure {
+		.kv-file-content {
+			display: none;
+		}
+	}
+	.file-default-preview {
+		text-align: center;
+		img {
+			max-height: em(250px);
+			display: inline-block;
+		}
+	}
+}
+.btn-file {
+	white-space: nowrap;
+	&,
+	input {
+		cursor: pointer;
+	}
+}

@@ -1,0 +1,209 @@
+// BACKGROUNDS
+// ------------------------------------
+
+[class*="bg-"] {
+	background-repeat: no-repeat;
+	background-position: center center;
+	background-size: cover;
+}
+// With image
+.bg-01 {
+	background-color: $color-light-grey;
+	background-image: url('../../img/layout/bg-01.jpg');
+}
+.bg-02 {
+	background-color: $color-light-grey;
+	background-image: url('../../img/layout/bg-02.jpg');
+}
+.bg-03 {
+	background-color: $color-light-grey;
+	background-image: url('../../img/layout/bg-03.jpg');
+}
+
+// Bootstrap
+.bg-default {
+	background-color: $color-default;
+}
+.bg-primary {
+	background-color: $color-primary;
+}
+.bg-secondary {
+	background-color: $color-secondary;
+}
+.bg-info {
+	background-color: $color-info;
+}
+.bg-success {
+	background-color: $color-success;
+}
+.bg-warning {
+	background-color: $color-warning;
+}
+.bg-danger {
+	background-color: $color-danger;
+}
+
+// Color names
+.bg-black {
+	background-color: $color-black;
+}
+.bg-white {
+	background-color: $color-white;
+}
+.bg-grey {
+	background-color: $color-grey;
+}
+.bg-light {
+	background-color: $color-light;
+}
+
+// Others
+.bg-dark {
+	background-color: $color-dark-bg;
+}
+.border-top-light {
+	border-top: 1px solid $color-light;
+}
+.border-top-light-grey {
+	border-top: 1px solid $color-light-grey;
+}
+
+/* Parallax effect */
+.parallax {
+	background-attachment: fixed;
+}
+
+// Hatch
+[class*="hatch-"] {
+	position: relative;
+	z-index: 1;
+	&:before {
+		content: '';
+		position: absolute;
+		left: 0;
+		right: 0;
+		top: 0;
+		bottom: 0;
+		z-index: -1;
+	}
+}
+@mixin hatch-variant($type, $bg, $opacity: 0.5, $fg: $color-white) {
+	.hatch-#{$type}:before {
+		background-color: rgba($bg, $opacity);
+	}
+}
+@include hatch-variant('default', $color-default);
+@include hatch-variant('dark', $color-black);
+@include hatch-variant('light', $color-white);
+@include hatch-variant('grey', $color-grey);
+
+// Tint
+[class*="tint-"] {
+	position: relative;
+	text-align: center;
+	overflow: hidden;
+}
+[class*="tint-"]:before {
+	content: '';
+	position: absolute;
+	left: 0;
+	right: 0;
+	top: 0;
+	bottom: 0;
+	z-index: 1;
+	transition: all 1s ease;
+}
+.tint-content {
+	position: absolute;
+	left: 0;
+	right: 0;
+	top: 0;
+	bottom: 0;
+	z-index: 2;
+	display: inline-block;
+	vertical-align: middle;
+	white-space: nowrap;
+	opacity: 0;
+	transition: all 1s ease;
+	animation: zoomOut 0.5s ease;
+}
+[class*="tint-"] .tint-content:before {
+	content: '';
+	position: static;
+	display: inline-block;
+	height: 100%;
+	vertical-align: middle;
+	margin-right: -0.25em;
+}
+[class*="tint-"]:hover .tint-content,
+[class*="tint-"]:focus .tint-content {
+	opacity: 1;
+	animation: zoomIn 0.5s ease;
+}
+/* Tint style */
+.tint-dark:hover:before,
+.tint-dark:focus:before {
+	background-color: rgba($color-black, 0.7);
+}
+.tint-light:hover:before,
+.tint-light:focus:before {
+	background-color: rgba($color-white, 0.7);
+}
+
+// Hover icon
+.hover-icon {
+	position: relative;
+	&:before,
+	&:after {
+		position: absolute;
+		opacity: 0;
+		transition: all 0.5s ease;
+	}
+	&:before {
+		top: 50%;
+		left: 50%;
+		margin-top: -0.5em;
+		margin-left: -0.5em;
+		font-size: em(32px);
+		z-index: 1;
+		color: #fff;
+	}
+	&:after {
+		content: '';
+		left: 0;
+		right: 0;
+		top: 0;
+		bottom: 0;
+		background-color: rgba($color-primary, 0.5);
+	}
+	&:hover,
+	&:focus {
+		&:before,
+		&:after {
+			opacity: 1;
+		}
+	}
+}
+
+//
+.img-album {
+	position: relative;
+	padding-bottom: em(9px);
+	&:before,
+	&:after {
+		content: '';
+		position: absolute;
+		height: em(5px);
+		border: 1px solid $color-ctrl-border;
+	}
+	&:before {
+		left: em(5px);
+		right: em(5px);
+		bottom: em(4px);
+	}
+	&:after {
+		left: em(10px);
+		right: em(10px);
+		bottom: 0;
+	}
+}

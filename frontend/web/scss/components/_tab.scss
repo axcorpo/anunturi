@@ -1,0 +1,40 @@
+// COMPONENTS / TAB
+// ------------------------------------
+
+.tab-pane {
+	padding: em(16px);
+	border-left: 1px solid #ddd;
+	border-right: 1px solid #ddd;
+	border-bottom: 1px solid #ddd;
+}
+
+.tabs-custom {
+	& > .nav-tabs,
+	& > .nav-tabs.nav-justified {
+		border-bottom: 0;
+		& > li {
+			& > a {
+				border: 0;
+				border-bottom: em(2px) solid $color-light;
+				border-radius: 0;
+				line-height: 1;
+				background-color: $color-white;
+				color: inherit;
+			}
+			&.active > a,
+			&.active > a:hover,
+			&.active > a:focus,
+			& > a:hover,
+			& > a:focus {
+				border: 0;
+				border-bottom: em(2px) solid $color-default;
+				background-color: $color-white;
+				color: $color-default;
+			}
+		}
+	}
+	.tab-pane {
+		padding: em(16px) 0 0;
+		border: 0;
+	}
+}

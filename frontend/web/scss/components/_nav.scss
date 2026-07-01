@@ -1,0 +1,9 @@
+// COMPONENTS / NAV
+// ------------------------------------
+
+.nav-tabs.nav-justified {
+	& > li {
+		width: 1%;
+		display: table-cell;
+	}
+}

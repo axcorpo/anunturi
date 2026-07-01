@@ -1,0 +1,56 @@
+// COMPONENTS / SPEECH BUBBLE
+// ------------------------------------
+
+.speech-bubble {
+	position: relative;
+	padding-left: em(100px);
+	.speech-bubble-figure {
+		position: absolute;
+		left: 0;
+		top: em(-43px);
+		animation: fadeInLeft 1s ease;
+	}
+	.speech-bubble-body {
+		position: relative;
+		padding: em(16px);
+		border: 1px solid $color-light;
+		border-radius: em(16px);
+		animation: zoomInLeft 1s ease;
+		&:before,
+		&:after {
+			content: '';
+			position: absolute;
+			top: em(16px);
+			width: 0;
+			height: 0;
+			border-style: solid;
+			border-width: em(10px) em(20px) em(10px) 0;
+		}
+		&:before {
+			content: '';
+			left: em(-20px);
+			border-color: transparent $color-light transparent transparent;
+		}
+		&:after {
+			content: '';
+			left: em(-18px);
+			border-color: transparent $color-white transparent transparent;
+		}
+		p:not(:last-child) {
+			margin-bottom: em(5px);
+		}
+	}
+}
+
+// Variants
+@mixin speech-bubble-variant($type, $bg) {
+	.speech-bubble-#{$type} {
+		.speech-bubble-body {
+			border-color: $bg;
+			&:before {
+				border-right-color: $bg;
+			}
+		}
+	}
+}
+@include speech-bubble-variant('default', $color-default);

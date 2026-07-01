@@ -1,0 +1,56 @@
+// COMPONENTS / DROPUP
+// ------------------------------------
+
+.dropup {
+	> .dropdown-menu {
+		min-width: em(160px);
+		padding: 0;
+		margin: 0;
+		border: 0;
+		border-radius: 0;
+		font: inherit;
+		background-color: $color-white;
+		@include boxShadow(2);
+		animation: fadeInDown 0.3s ease;
+		&:before {
+			content: '';
+			position: absolute;
+			bottom: em(-12px);
+			left: 0;
+			width: 0;
+			height: 0;
+			border-style: solid;
+			border-width: em(13px) em(10px) 0 em(10px);
+			border-color: $color-white transparent transparent transparent;
+		}
+		&.dropdown-menu-right {
+			&:before {
+				left: 100%;
+				margin-left: em(-20px);
+			}
+		}
+		> li {
+			> a {
+				padding: em(10px) em(16px);
+				&:hover,
+				&:focus {
+					background-color: $color-default;
+				}
+			}
+		}
+		.divider {
+			margin: 0;
+			background-color: $color-ctrl-border;
+		}
+		.dropdown-header {
+			font-size: em(14px);
+			padding: em(5px, 14px) em(16px, 14px);
+			background-color: $color-fg;
+		}
+	}
+	&.open {
+		> .dropdown-menu {
+			margin-bottom: em(12px);
+		}
+	}
+}

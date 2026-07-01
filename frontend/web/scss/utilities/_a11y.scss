@@ -1,0 +1,51 @@
+/**
+ * ACCESSIBILITY
+ */
+
+/* Skip links */
+.skip-links {
+	position: relative;
+}
+.skip-link {
+	z-index: 999;
+}
+.skip-link:focus {
+	position: absolute;
+	width: auto;
+	height: auto;
+	margin: 0;
+	overflow: inherit;
+	clip: inherit;
+}
+
+/* Jump to top */
+.skip-link.btn-jump-top {
+	padding: 0.6rem 0.8rem;
+	position: fixed;
+	bottom: em(15px);
+	right: em(15px);
+	border-radius: 50%;
+	opacity: 0;
+	@include boxShadow(3);
+}
+.scroll {
+	.btn-jump-top {
+		opacity: 0.5;
+		animation: zoomIn 0.5s ease-in-out;
+	}
+	.btn-jump-top:hover,
+	.btn-jump-top:focus {
+		opacity: 1;
+	}
+}
+
+@mixin sr-only() {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	border: 0;
+}

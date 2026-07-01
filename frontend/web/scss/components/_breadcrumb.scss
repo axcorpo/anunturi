@@ -1,0 +1,16 @@
+// COMPONENTS / BREADCRUMB
+// ------------------------------------
+
+.breadcrumb {
+	margin: 0;
+	background-color: transparent;
+	& > li {
+		color: inherit;
+		&.active {
+			color: $color-default;
+		}
+	}
+	a {
+		color: inherit;
+	}
+}

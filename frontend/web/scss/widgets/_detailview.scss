@@ -1,0 +1,32 @@
+// WIDGETS / DETAILVIEW
+// ------------------------------------
+
+.detail-view {
+	&.detail-view-fixed {
+		th {
+			width: em(20px) !important;
+			white-space: nowrap;
+		}
+	}
+	.file-input {
+		.file-preview-thumbnails {
+			display: block !important;
+		}
+	}
+	.gallery-thumbnail {
+		img {
+			width: auto;
+			max-height: em(120px);
+		}
+	}
+}
+
+// Within modal
+.modal {
+	.detail-view {
+		th, td,
+		.th, .td {
+			padding: em(12px) em(15px);
+		}
+	}
+}

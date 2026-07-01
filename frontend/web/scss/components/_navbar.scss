@@ -1,0 +1,82 @@
+// COMPONENTS / NAVBAR
+// ------------------------------------
+
+.navbar {
+	min-height: inherit;
+	margin: 0;
+	border: 0;
+	border-radius: 0;
+	background-color: transparent;
+	.navbar-header {
+		margin: 0;
+	}
+	.navbar-brand {
+		height: auto;
+		line-height: 1;
+		padding: em(15px) 0;
+		white-space: nowrap;
+		text-overflow: ellipsis;
+		overflow: hidden;
+	}
+	.navbar-toggle {
+		padding: em(9px) em(10px);
+		margin: em(5px) 0;
+		border-radius: 0;
+	}
+	.navbar-collapse {
+		padding: 0;
+		box-shadow: none;
+	}
+	.navbar-nav {
+		margin: 0;
+		& > li {
+			& > a {
+				padding: em(15px) em(15px);
+				color: inherit;
+			}
+		}
+	}
+	@media (min-width: $breakpoint-sm) {
+		.navbar-nav {
+			& > li {
+				& > a {
+
+				}
+			}
+		}
+	}
+}
+
+// VARIANTS
+@mixin navbar-variant($type, $bg, $fg: $color-black) {
+	.navbar-#{$type} {
+		.navbar-collapse {
+			border-color: rgba($bg, 0.3);
+		}
+		.navbar-toggle {
+			.icon-bar {
+				background-color: $bg;
+			}
+		}
+		.navbar-nav {
+			& > li {
+				& > a {
+					color: $bg;
+				}
+				&.active > a,
+				a:hover,
+				a:focus {
+					color: $fg;
+					background-color: $bg;
+				}
+			}
+		}
+	}
+}
+@include navbar-variant('default', $color-default);
+@include navbar-variant('primary', $color-primary);
+@include navbar-variant('info', $color-info);
+@include navbar-variant('success', $color-success);
+@include navbar-variant('warning', $color-warning);
+@include navbar-variant('danger', $color-danger);
+@include navbar-variant('light', $color-white);

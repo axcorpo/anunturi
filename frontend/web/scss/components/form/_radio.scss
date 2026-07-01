@@ -1,0 +1,128 @@
+// COMPONENTS / RADIO
+// ------------------------------------
+
+@mixin radio-variant($type, $bg, $fg: $color-white) {
+	&.radio-#{$type} input[type="radio"] + span {
+		border-color: $bg;
+	}
+	&.radio-#{$type} input[type="radio"]:checked + span {
+		background-color: $bg;
+		border-color: $bg;
+		&:before {
+			color: $fg;
+		}
+	}
+}
+
+label.radio {
+	padding: 0 0 0 em(30px);
+}
+.radio {
+	min-height: em(20px);
+	margin: em(2px) 0 0;
+	font-weight: 400;
+	padding: 0;
+	cursor: pointer;
+	label {
+		padding: 0 0 0 em(30px);
+	}
+	input[type="radio"] ~ span {
+		position: absolute;
+		left: 0;
+		top: em(-2px);
+		width: em(20px);
+		height: em(20px);
+		border: 1px solid $color-ctrl-border;
+		border-radius: 50%;
+		display: inline-block;
+		text-align: center;
+		transition: background 0.3s ease, border 0.3s ease;
+		&:before {
+			content: '';
+			position: absolute;
+			left: 0;
+			right: 0;
+			top: 0;
+			bottom: 0;
+			line-height: em(18px, 12px);
+			font-size: em(12px);
+			font-family: 'FontAwesome', 'Glyphicons Halflings';
+			text-align: center;
+		}
+	}
+	.form-inline & input[type="radio"],
+	input[type="radio"] {
+		@include hiddenAccessible();
+	}
+	// States
+	input[type="radio"]:checked ~ span {
+		background-color: $color-default;
+		border-color: $color-default;
+		&:before {
+			content: '\f111';
+			color: $color-white;
+			animation: zoomIn 0.3s linear;
+		}
+	}
+	input[type="radio"]:hover,
+	input[type="radio"]:focus,
+	.radio:hover {
+		& ~ span {
+			border-color: $color-default;
+		}
+	}
+	input[type="radio"][readonly] ~ span,
+	input[type="radio"]:disabled ~ span,
+	input[type="radio"].disabled ~ span {
+		opacity: 0.65;
+	}
+	// Adjacent spacing
+	& + .radio {
+		margin: em(12px) 0 0;
+	}
+	&.inline {
+		display: inline-block;
+		vertical-align: top;
+		margin: em(5px) em(15px) em(5px) 0;
+	}
+	// Variants
+	@include radio-variant('default', $color-default);
+	@include radio-variant('primary', $color-primary);
+	@include radio-variant('info', $color-info);
+	@include radio-variant('success', $color-success);
+	@include radio-variant('warning', $color-warning);
+	@include radio-variant('danger', $color-danger);
+}
+
+// Mode
+.radio-inline {
+	.radio {
+		margin: em(5px) em(15px) em(5px) 0;
+		display: inline-block;
+		vertical-align: top;
+	}
+	&.radio-inline-md {
+		.radio {
+			width: em(250px);
+		}
+	}
+}
+.radio-self {
+	.radio {
+		padding: 0;
+		margin: em(-5px);
+		input[type="radio"] {
+			& ~ span {
+				position: static;
+				width: em(32px);
+				height: em(32px);
+				line-height: em(30px);
+				margin: em(5px);
+				border-radius: 0;
+				&:before {
+					content: none;
+				}
+			}
+		}
+	}
+}

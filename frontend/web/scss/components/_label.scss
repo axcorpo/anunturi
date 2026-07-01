@@ -1,0 +1,46 @@
+// COMPONENTS / LABEL
+// ------------------------------------
+
+.label-block {
+	display: block;
+}
+.label {
+	border-radius: 0;
+	font-size: 100%;
+	&.label-block {
+		& + .label-block {
+			margin-top: 5px;
+		}
+	}
+	&.label-shadow {
+		text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.6) !important;
+	}
+	&.label-outline {
+		&,
+		&:hover,
+		&:focus {
+			color: inherit;
+		}
+		border: 1px solid #ccc;
+	}
+	&.label-width-md {
+		width: 100%;
+		max-width: 350px;
+		line-height: inherit;
+		margin-right: 5px;
+		margin-bottom: 5px;
+		white-space: nowrap;
+	}
+}
+
+// Variants
+@mixin label-variant($type, $bg, $fg: $color-white) {
+	.label-#{$type} {
+		color: $fg;
+		background-color: $bg;
+	}
+}
+@include label-variant('info', $color-info, '\f05a');
+@include label-variant('success', $color-success, '\f058');
+@include label-variant('warning', $color-warning, '\f06a');
+@include label-variant('danger', $color-danger, '\f057');

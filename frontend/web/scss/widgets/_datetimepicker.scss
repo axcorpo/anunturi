@@ -1,0 +1,12 @@
+// WIDGETS / DATETIMEPICKER
+// ------------------------------------
+
+.datetimepicker {
+	.input-group-addon {
+		cursor: pointer;
+	}
+}
+
+.modal.in ~ .bootstrap-datetimepicker-widget {
+	z-index: 10010 !important;
+}

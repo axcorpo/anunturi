@@ -1,0 +1,39 @@
+// COMPONENTS / PANEL
+// ------------------------------------
+
+.panel {
+	border-radius: 0;
+	background-color: transparent;
+	& > .panel-heading {
+		border-radius: 0;
+		font-size: inherit;
+	}
+	.panel-title {
+		font-size: inherit;
+	}
+}
+
+.panel-group {
+	margin: 0;
+	.panel {
+		border-radius: 0;
+	}
+}
+
+// Variants
+@mixin panel-variant($type, $bg, $fg: $color-white) {
+	.panel-#{$type} {
+		border-color: $bg;
+		& > .panel-heading {
+			border-color: $bg;
+			background-color: rgba($bg, 0.98);
+			color: $fg;
+		}
+	}
+}
+@include panel-variant('default', $color-default);
+@include panel-variant('primary', $color-primary);
+@include panel-variant('info', $color-info);
+@include panel-variant('success', $color-success);
+@include panel-variant('warning', $color-warning);
+@include panel-variant('danger', $color-danger);

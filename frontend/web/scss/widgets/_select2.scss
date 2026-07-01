@@ -1,0 +1,71 @@
+// WIDGETS / SELECT2
+// ------------------------------------
+
+.select2 {
+	.select2-selection--single {
+		.select2-selection__arrow {
+			border-left: 0 !important;
+		}
+	}
+	.select2-selection {
+		& > .select2-selection__rendered {
+			& > .select2-selection__clear {
+				top: em(2px);
+			}
+		}
+	}
+	// Sizes
+	.select2-selection--sm {
+		> .select2-selection__rendered {
+			min-width: 250px;
+		}
+	}
+}
+
+.select2-container {
+	&.select2-container--open {
+		z-index: 10050;
+	}
+	> .select2-dropdown {
+		border-radius: 0;
+		&.auto-width {
+			width: auto !important;
+		}
+	}
+	.select2-search {
+		& > .select2-search__field {
+			border-radius: 0 !important;
+		}
+	}
+}
+
+.select2-container--krajee {
+	.select2-selection {
+		box-shadow: none;
+	}
+}
+
+.select2-selection__clear {
+	cursor: pointer;
+}
+
+.input-group.s2-input-group {
+	& > .input-group-btn {
+		width: 1%;
+		height: 100%;
+		& > .btn {
+			position: static;
+		}
+	}
+}
+
+// With form control
+.form-control + .select2 {
+	.select2-selection--single {
+		padding-right: em(32px);
+		& > .select2-selection__arrow {
+			height: 100%;
+			right: em(7px);
+		}
+	}
+}

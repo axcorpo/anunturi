@@ -1,0 +1,128 @@
+// COMPONENTS / CHECKBOX
+// ------------------------------------
+
+@mixin checkbox-variant($type, $bg, $fg: $color-white) {
+	&.checkbox-#{$type} input[type="checkbox"] + span {
+		border-color: $bg;
+	}
+	&.checkbox-#{$type} input[type="checkbox"]:checked + span {
+		background-color: $bg;
+		border-color: $bg;
+		&:before {
+			color: $fg;
+		}
+	}
+}
+
+label.checkbox {
+	padding: 0 0 0 em(30px);
+}
+.checkbox {
+	min-height: em(20px);
+	margin: em(2px) 0 0;
+	font-weight: 400;
+	padding: 0;
+	cursor: pointer;
+	label {
+		padding: 0 0 0 em(30px);
+	}
+	input[type="checkbox"] ~ span {
+		position: absolute;
+		left: 0;
+		top: em(-2px);
+		width: em(20px);
+		height: em(20px);
+		border: 1px solid $color-ctrl-border;
+		display: inline-block;
+		text-align: center;
+		transition: background 0.3s ease, border 0.3s ease;
+		&:before {
+			content: '';
+			position: absolute;
+			left: 0;
+			right: 0;
+			top: 0;
+			bottom: 0;
+			line-height: em(18px, 12px);
+			font-size: em(12px);
+			font-family: 'FontAwesome', 'Glyphicons Halflings';
+			text-align: center;
+		}
+	}
+	.form-inline & input[type="checkbox"],
+	input[type="checkbox"] {
+		@include hiddenAccessible();
+	}
+	// States
+	input[type="checkbox"]:checked ~ span {
+		background-color: $color-default;
+		border-color: $color-default;
+		&:before {
+			content: '\f00c';
+			color: $color-white;
+			animation: zoomIn 0.3s linear;
+		}
+	}
+	input[type="checkbox"]:hover,
+	input[type="checkbox"]:focus,
+	.checkbox:hover {
+		& ~ span {
+			border-color: $color-default;
+		}
+	}
+	input[type="checkbox"][readonly] ~ span,
+	input[type="checkbox"]:disabled ~ span,
+	input[type="checkbox"].disabled ~ span {
+		opacity: 0.65;
+	}
+	// Adjacent spacing
+	& + .checkbox {
+		margin: em(12px) 0 0;
+	}
+	&.inline {
+		display: inline-block;
+		vertical-align: top;
+		& + .inline {
+			margin: 0 0 0 em(12px);
+		}
+	}
+	// Variants
+	@include checkbox-variant('default', $color-default);
+	@include checkbox-variant('primary', $color-primary);
+	@include checkbox-variant('info', $color-info);
+	@include checkbox-variant('success', $color-success);
+	@include checkbox-variant('warning', $color-warning);
+	@include checkbox-variant('danger', $color-danger);
+}
+
+// Mode
+.checkbox-inline {
+	.checkbox {
+		margin: em(5px) em(15px) em(5px) 0;
+		display: inline-block;
+		vertical-align: top;
+	}
+	&.checkbox-inline-md {
+		.checkbox {
+			width: em(250px);
+		}
+	}
+}
+.checkbox-self {
+	.checkbox {
+		padding: 0;
+		margin: em(-5px);
+		input[type="checkbox"] {
+			& ~ span {
+				position: static;
+				width: em(32px);
+				height: em(32px);
+				line-height: em(30px);
+				margin: em(5px);
+				&:before {
+					content: none;
+				}
+			}
+		}
+	}
+}

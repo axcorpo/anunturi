@@ -1,0 +1,73 @@
+// COMPONENTS / ALERT
+// ------------------------------------
+
+.alert {
+	position: relative;
+	padding: em(16px);
+	margin: 0;
+	border-radius: 0;
+	line-height: normal;
+	& > .close {
+		position: absolute;
+		right: em(16px);
+		top: 50%;
+		margin-top: em(-8px);
+	}
+	&.alert-icon {
+		padding-left: em(56px);
+		padding-right: em(40px);
+		&:before {
+			font-family: 'FontAwesome', 'Glyphicons Halflings';
+			font-size: em(32px);
+			position: absolute;
+			left: em(16px, 32px);
+			top: 50%;
+			margin-top: em(-16px, 32px);
+			opacity: 0.5;
+		}
+	}
+}
+body > .alert {
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	z-index: 9999;
+	padding: em(35px);
+	font-weight: 500;
+	text-align: center;
+	text-shadow: 1px 1px 1px #000;
+	& > .close {
+		right: em(16px, 32px);
+		margin-top: em(-16px, 32px);
+		font-size: em(32px);
+	}
+	&.alert-icon {
+		padding-left: em(90px);
+		padding-right: em(48px);
+		&:before {
+			font-size: em(64px);
+			left: em(16px, 64px);
+			top: 50%;
+			margin-top: em(-32px, 64px);
+			opacity: 0.5;
+		}
+	}
+}
+
+// Variants
+@mixin alert-variant($type, $bg, $icon, $fg: $color-white) {
+	.alert-#{$type} {
+		color: $fg;
+		background-color: rgba($bg, 0.98);
+		border-color: $bg;
+		&.alert-icon:before {
+			content: $icon;
+			color: $fg;
+		}
+	}
+}
+@include alert-variant('info', $color-info, '\f05a');
+@include alert-variant('success', $color-success, '\f058');
+@include alert-variant('warning', $color-warning, '\f06a');
+@include alert-variant('danger', $color-danger, '\f057');

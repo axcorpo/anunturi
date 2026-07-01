@@ -1,0 +1,781 @@
+/*================= 9. ADS ==================*/
+
+/*================= 9.1 sidebar ==================*/
+.sidebarInner{
+	border: 1px solid $border-color;
+	border-radius: 4px;
+	padding: 10px;
+	margin-bottom: 25px;
+	@include tablet{
+		padding: 20px;
+		margin-bottom: 50px;
+	}
+	@include desktops{
+		padding: 30px;
+	}
+	.form-control{
+		border-right: none;
+	}
+	.input-group-addon{
+		background-color: transparent;
+		border-color: $border-color;
+	}
+	.panel{
+		margin-bottom: 0;
+		border: none;
+		box-shadow: none;
+	}
+	.panel-heading{
+		background-color: transparent;
+		border: none;
+		padding: 0 0 15px 0;
+		font-family: 'Poppins', sans-serif;
+		font-size: 16px;
+		color: $title-color;
+	}
+    .form-group{
+        display: inline-block !important;
+    }
+	.panel-body{
+		padding: 0;
+	}
+	.categoryList{
+		li{
+			a{
+				border-bottom: 1px solid $border-color;
+				display: block;
+				color: $secondary-color;
+				padding: 7px 0;
+				&:hover{
+					color: $primary-color;
+				}
+				@include tablet{
+					padding: 15px 0;
+				}
+			}
+			&:last-child{
+				a{
+					border-bottom: none;
+				}
+			}
+		}
+	}
+	&.sidebarCategory{
+		padding: 0 15px;
+		border: none;
+		margin-bottom: 40px;
+		width: 100%;
+		float: left;
+		@include large-desktops{
+			width: 100%;
+			float: right;
+			padding: 0;
+		}
+		.input-group{
+			border: 1px solid $border-color;
+			border-radius: 4px;
+		}
+		.form-control{
+			border: none;
+            &.range{
+                max-width:123px;
+                border: 1px solid #e5e5e5;
+                border-radius: 4px;
+            }
+		}
+		.input-group-addon{
+			border: none;
+			i.fa{
+				width: 36px;
+				height: 36px;
+				display: block;
+				background-color: $primary-color;
+				border-radius: 4px;
+				line-height: 36px;
+				color: $white-color;
+			}
+		}
+		.categoryList{
+			li{
+				a{
+					border: none;
+					padding: 7px 0;
+				}
+			}
+		}
+	}
+    &.price-form{
+        .input-group {
+            border: none;
+        }
+    }
+}
+
+
+
+/*================= 9.2 BLOG DETAILS ==================*/
+.blogContent{
+	background-color: transparent;
+	border-bottom: 1px solid $border-color;
+	margin-bottom: 25px;
+	padding-bottom: 25px;
+	@include tablet{
+		margin-bottom: 50px;
+		padding-bottom: 50px;
+	}
+	.caption{
+		padding: 0; 
+		h3{
+			font-weight: 500;
+			text-transform: capitalize;
+			font-size: 20px;
+			@include tablet{
+				font-size: 40px;
+			}
+		}
+		img{
+			border-radius: 4px;
+			margin-bottom: 25px;
+		}
+		h4{
+			font-size: 14px;
+			color: $secondary-color;
+			font-family: 'Muli', sans-serif;
+			font-weight: 400;
+			margin-bottom: 15px;
+			a{
+				color: $primary-color;
+			}
+		}
+		.socialLink{
+			text-align: left;
+			margin: 0;
+			li{
+				a{
+					color: $secondary-color;
+					font-size: 13px;
+					padding: 0;
+					width: 38px;
+					height: 38px;
+					border-radius: 100%;
+					display: block;
+					border: 1px solid $border-color;
+					background-color: transparent;
+					text-align: center;
+					line-height: 38px;
+					&:hover{
+						color: $white-color;
+						background-color: $primary-color;
+						border-color: $primary-color;
+					}
+				}
+				&:first-child{
+					padding-left: 0;
+				}
+			}
+		}
+	}
+}
+/*================= 9.3 COMMNETS FORM ==================*/
+.commentArea{
+	h3{
+		font-weight: 400;
+		font-size: 16px;
+		text-transform: capitalize;
+		margin-bottom: 25px;
+	}
+	form{
+		margin: 0 -15px;
+	}
+}
+.deafultForm{
+	.control-label{
+		color: $secondary-color;
+		font-weight: 400;
+		font-size: 15px;
+		margin-bottom: 7px;
+	}
+}
+.deafultForm{
+	.row{
+		margin: 0;
+	}
+}
+/*================= 9.4 BLOG ==================*/
+.blogInner{
+	background-color: transparent;
+	border-bottom: 1px solid $border-color;
+	padding-bottom: 17px;
+	margin-bottom: 25px;
+	@include tablet{
+		padding-bottom: 42px;
+		margin-bottom: 50px;
+	}
+	img{
+		border-radius: 4px;
+	}
+	.caption{
+		padding: 0; 
+		margin-top: 30px;
+		h4{
+			font-size: 14px;
+			color: $secondary-color;
+			font-family: 'Muli', sans-serif;
+			font-weight: 400;
+			margin-bottom: 15px;
+			a{
+				color: $primary-color;
+			}
+		}
+		h3{
+			font-weight: 500;
+			font-size: 20px;
+		}
+	}
+	p{
+		margin-bottom: 0;
+	}
+}
+.iframWrapper{
+	iframe{
+		width: 100%;
+	}
+}
+.blogInnerWrapper{
+	.blogInner:last-child{
+		padding-bottom: 0;
+		border: none;
+		.caption{
+			margin-top: 0;
+		}
+	}
+}
+#blog-carousel-id{
+	.item{
+		border-radius: 4px;
+	}
+	i.icon-listy{
+		width: 45px;
+		height: 45px;
+		background-color: rgba($white-color, .35);
+		border: 1px solid rgba($white-color, .51); 
+		border-radius: 4px;
+		display: block;
+		line-height: 45px;
+		font-size: 15px;
+		text-shadow: none;
+		color: $white-color;
+		margin-top: -20px;
+		@include transition(all 0.3s ease-in-out);
+	}
+	.carousel-control{
+		background-image: none;
+		opacity: 1;
+		&.left{
+			i.icon-listy{
+				position: absolute;
+				top: 50%;
+				left: 50%;
+			}
+		}
+		&.right{
+			i.icon-listy{
+				position: absolute;
+				top: 50%;
+				right: 50%;
+			}
+		}
+		&:hover{
+			i.icon-listy{
+				background-color: $primary-color;
+				border-color: $primary-color;
+				color: $white-color;
+			}
+		}
+	}
+}
+
+.blogDetials{
+	.col-sm-8.col-xs-12{
+		padding-right: 15px;
+		@include desktops{
+			padding-right: 0;
+		}
+	}
+	.blogContent{
+		.caption{
+			h3{
+				margin-bottom: 40px;
+			}
+		}
+	}
+	.sidebarInner{
+		width: 100%;
+		float: left;
+		@include large-desktops{
+			width: 320px;
+			float: right;
+		}
+	}
+}
+.blogDetials{
+	padding: 50px 0;
+	@include tablet{
+		padding: 100px 0 70px 0;
+	}
+}
+
+/* price range*/
+.price-collapse{
+    margin-top: 20px;
+}
+
+/*checkbox style - filter */
+
+/* The container */
+
+.containercb {
+  display: block;
+  position: relative;
+  padding-left: 35px;
+  margin-bottom: 12px;
+  cursor: pointer;
+  font-size: 14px;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  input {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+    height: 0;
+    width: 0;
+  }
+}
+
+/* Hide the browser's default checkbox */
+
+/* Create a custom checkbox */
+
+.checkmark {
+  position: absolute;
+  top: 0px;    
+  left: 0;
+  height: 23px;
+  width: 22px;
+  background-color: #eee;
+}
+
+/* On mouse-over, add a grey background color */
+
+.containercb {
+  &:hover input ~ .checkmark {
+    background-color: #ccc;
+  }
+  input:checked ~ .checkmark {
+    background-color: $primary-color;
+  }
+}
+
+/* When the checkbox is checked, add a blue background */
+
+/* Create the checkmark/indicator (hidden when not checked) */
+
+.checkmark:after {
+  content: "";
+  position: absolute;
+  display: none;
+}
+
+/* Show the checkmark when checked */
+
+.containercb {
+  input:checked ~ .checkmark:after {
+    display: block;
+  }
+  .checkmark:after {
+    left: 9px;
+    top: 5px;
+    width: 5px;
+    height: 10px;
+    border: solid white;
+    border-width: 0 3px 3px 0;
+    -webkit-transform: rotate(45deg);
+    -ms-transform: rotate(45deg);
+    transform: rotate(45deg);
+  }
+}
+
+/* Style the checkmark/indicator */
+
+a {
+  &:focus{
+    color: $secondary-color;
+  }
+  &:hover {
+    color: $primary-color;
+  }  
+}
+
+label {
+    font-weight: 400;
+}
+
+
+
+/* Radio button */
+
+/* The container */
+
+.container-rd {
+  display: block;
+  position: relative;
+  padding-left: 35px;
+  margin-bottom: 12px;
+  cursor: pointer;
+  font-size: 15px;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  font-weight: 400;
+  input {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+  }
+}
+
+/* Hide the browser's default radio button */
+
+/* Create a custom radio button */
+
+.checkmark-radio {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 23px;
+  width: 23px;
+  background-color: #eee;
+  border-radius: 50%;
+}
+
+/* On mouse-over, add a grey background color */
+
+.container-rd {
+  &:hover input ~ .checkmark-radio {
+    background-color: #ccc;
+  }
+  input:checked ~ .checkmark-radio {
+    background-color: $primary-color;;
+  }
+}
+
+/* When the radio button is checked, add a blue background */
+
+/* Create the indicator (the dot/circle - hidden when not checked) */
+
+.checkmark-radio:after {
+  content: "";
+  position: absolute;
+  display: none;
+}
+
+/* Show the indicator (dot/circle) when checked */
+
+.container-rd {
+  input:checked ~ .checkmark-radio:after {
+    display: block;
+  }
+  .checkmark-radio:after {
+    top: 7px;
+    left: 8px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: white;
+  }
+}
+
+/* Style the indicator (dot/circle) */
+
+
+/* Scroll Section - Marca */
+
+.panel-heading{
+    a{
+        color: $title-color;
+    }
+}
+
+.marca {
+    max-height: 300px;
+    overflow-y: scroll;
+    /* width */
+    &::-webkit-scrollbar {
+        width: 10px;
+    }
+
+    /* Track */
+    &::-webkit-scrollbar-track {
+        background: #f1f1f1; 
+    }
+
+    /* Handle */
+    &::-webkit-scrollbar-thumb {
+        background: #888; 
+    }
+
+    /* Handle on hover */
+    &::-webkit-scrollbar-thumb:hover {
+        background: #555; 
+    }
+}
+
+
+/* year filter */
+span{
+    &.filter-year {
+    width: 123px;
+    display: inline-block;
+}
+}
+
+.filter-year {
+	ul.sbOptions {
+		height: 200px;
+		overflow-y: scroll;
+        &::-webkit-scrollbar {
+        width: 10px;
+        }
+
+        /* Track */
+        &::-webkit-scrollbar-track {
+            background: #f1f1f1; 
+        }
+
+        /* Handle */
+        &::-webkit-scrollbar-thumb {
+            background: #888; 
+        }
+
+        /* Handle on hover */
+        &::-webkit-scrollbar-thumb:hover {
+            background: #555; 
+    }
+	}
+    .sbHolder {
+		height: 50px !important;
+	}
+	.sbSelector {
+		height: 50px !important;
+        line-height: 50px;
+	}
+    .sbToggle {
+		top: 22px;
+	}
+}
+
+/* Only pictures */
+
+.only-pic {
+    max-width: 200px;
+    margin: 15px 0px;
+}
+
+/* sort filter */
+
+span{
+    &.filter-sort {
+    width: 140px;
+    display: inline-block;
+    float: right;
+}
+}
+
+.filter-sort {
+    .sbHolder {
+		height: 50px !important;
+	}
+	.sbSelector {
+		height: 50px !important;
+        line-height: 50px;
+	}
+    .sbToggle {
+		top: 22px;
+	}
+}
+
+/* active filters */
+.active-filters{
+    display:block;
+    margin-top:40px;
+    span{
+    background-color: #f7f7f7;
+    border: 1px solid #e5e5e5;
+    border-radius: 4px;
+    font-weight: 500;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: middle;    
+    color: #222222;
+    font-size: 14px;
+    letter-spacing: 0;
+    text-transform: capitalize;
+    padding: 3px 10px;
+    display: inline-block;    
+    line-height: 25px;
+    margin-right:5px;
+    margin-bottom:5px;
+        i{
+            margin-left:10px;
+        }
+        &:hover{
+            background-color: $primary-color;
+            border: 1px solid $primary-color;
+            color: $white-color;
+            i{
+                color:$white-color;
+            }
+        }
+    }
+}
+/*================= 9.5 NAVBAR mobile ==================*/
+
+.collapse.navbar-collapse.navbar-ex1-collapse.navbar-mobile {
+    @include tablet{
+			display:none !important;
+		}
+}
+
+ 
+/*================= 9.6 FILTER mobile ==================*/
+
+.moble-filter-expand {
+	&.navbar-ex3-collapse {
+		&.navbar-collapse {
+			&.collapse {
+                @include tablet{
+                    display:none !important;
+                }
+				&.in {
+					display: block;
+					position: fixed;
+					height: 100%;
+					background-color: #fff;
+					background-size: cover;
+					z-index: 1000;
+					overflow-y: scroll;
+                    &::-webkit-scrollbar {
+                        width: 10px;
+                        position:relative;
+                    }
+
+                    /* Track */
+                    &::-webkit-scrollbar-track {
+                        background: #f1f1f1; 
+                    }
+
+                    /* Handle */
+                    &::-webkit-scrollbar-thumb {
+                        background: #888; 
+                    }
+
+                    /* Handle on hover */
+                    &::-webkit-scrollbar-thumb:hover {
+                        background: #555; 
+                    }
+				}
+			}
+		}
+	}
+}
+
+.filter-header {
+    margin: 20px 0;
+    padding: 20px 15px;
+    border-bottom: 1px solid #c6c8cb;
+    button.btn.btn-primary.pull-right {
+    padding: 10px;
+    
+}
+    .total-products-info {
+    padding-top: 10px;
+}
+}
+
+
+.searchSelectboxes {
+	.sbOptions {
+		a {
+			&:hover {
+				color: $primary-color !important;
+			}
+		}
+	}
+}
+
+
+.filter-btn{
+   background-color: #ffffff;
+    margin: 0;
+    border-radius: 4px;
+    border: 1px solid #e5e5e5;
+    height: 50px !important;
+    font-family: 'Muli', sans-serif;
+    padding-right: 20px;
+    padding-left: 20px;
+    }
+.mobile-filter{
+    button {
+	&.navbar-toggle {
+        &.filter-btn {
+            margin-right: 15px;
+		}
+	}
+}
+
+}
+
+.filtre-mobile-up{
+    margin-top:15px;
+    @include tablet{
+        margin-top:0px;
+    }
+}
+
+.moble-filter-expand {
+    .form-group{
+        margin-bottom:0px;
+    }
+}
+
+.moble-filter-expand {
+    .price-collapse {
+        margin-top: 10px;
+    }
+}
+
+/* Contact page */
+
+.contactInfo {
+    background-color: #e8e8e8;
+    padding: 10px 35px;
+}
+
+.contact-page-content{
+    margin-top:30px;
+    margin-bottom:0px;
+    @include tablet{
+            margin-bottom:30px;
+        }
+    .contactInfo {
+        background-color: #e8e8e8;
+        padding: 10px 35px;
+        margin-top:30px;
+        @include tablet{
+            margin-top:0px;
+        }
+}
+}

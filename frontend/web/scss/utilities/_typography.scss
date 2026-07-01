@@ -1,0 +1,101 @@
+// TYPOGRAPHY
+// ------------------------------------
+
+@import url('https://fonts.googleapis.com/css?family=Poppins:400,500,600,300,700');
+
+// Paragraphs
+p {
+	margin: 0 0 1em;
+	line-height: 1.5;
+}
+p:last-child {
+	margin-bottom: 0;
+}
+ul, ol {
+	line-height: normal;
+}
+
+// Headings
+h1, h2, h3, h4, h5, h6,
+.h1, .h2, .h3, .h4, .h5, .h6 {
+	margin: 0;
+	line-height: normal;
+}
+
+h1, .h1 {
+	font-size: em(40px);
+}
+h2, .h2 {
+	font-size: em(32px);
+}
+h3, .h3 {
+	font-size: em(25px);
+}
+h4, .h4 {
+	font-size: em(20px);
+}
+h5, .h5 {
+	font-size: em(18px);
+}
+h6, .h6 {
+	font-size: 1em;
+}
+
+// Font Weight
+.font-light {
+	font-weight: 300;
+}
+.font-normal {
+	font-weight: 400;
+}
+.font-medium {
+	font-weight: 600;
+}
+.font-bold {
+	font-weight: 700;
+}
+.font-extrabold {
+	font-weight: 900;
+}
+// Font Size
+.font-xxs {
+	font-size: em(12px);
+}
+.font-xs {
+	font-size: em(14px);
+}
+.font-sm {
+	font-size: em(20px);
+}
+.font-md {
+	font-size: em(28px);
+}
+.font-lg {
+	font-size: em(35px);
+}
+.font-xlg {
+	font-size: em(60px);
+}
+.font-xxlg {
+	font-size: em(70px);
+}
+// Responsive font-size
+@media (max-width: $breakpoint-sm - 1) {
+	.font-xs-85 {
+		font-size: 85%;
+	}
+	.font-xs-90 {
+		font-size: 85%;
+	}
+}
+
+// Ellipsis
+.text-ellipsis {
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.text-line-through {
+	text-decoration: line-through;
+}

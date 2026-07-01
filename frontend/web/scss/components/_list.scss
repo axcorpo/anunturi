@@ -1,0 +1,184 @@
+// COMPONENTS / LIST
+// ------------------------------------
+
+[class*="list-"] {
+	padding: 0;
+	margin: 0;
+	list-style: none;
+}
+
+.list-link-underline {
+	margin-top: em(-15px);
+	& > li {
+		margin-top: em(15px);
+	}
+	a {
+		position: relative;
+		padding-bottom: em(3px);
+		color: inherit;
+		&:before {
+			content: '';
+			width: 0%;
+			position: absolute;
+			bottom: 0;
+			left: 0;
+			height: 1px;
+			background-color: $color-default;
+		}
+	}
+	& > li.active a,
+	a:hover,
+	a:focus {
+		text-decoration: none;
+		&:before {
+			width: 100%;
+		}
+	}
+}
+
+.list-icon {
+	margin-top: -1em;
+	> li {
+		position: relative;
+		padding-left: em(24px);
+		margin-top: 1em;
+		&:before {
+			position: absolute;
+			left: 0;
+			top: em(3px);
+			font-family: 'FontAwesome', 'Glyphicons Halflings';
+		}
+	}
+	&.list-icon-danger > li:before {
+		color: $color-danger;
+	}
+	&.list-circle {
+		& > li {
+			&:before {
+				content: '\f10c';
+			}
+		}
+	}
+}
+
+.list-inline-bullet {
+	> li {
+		display: inline-block;
+		& + li {
+			margin-top: 0;
+			margin-left: em(-4px);
+			&:before {
+				content: '\2022';
+				padding: 0 em(5px);
+			}
+		}
+	}
+}
+
+.list-spacing {
+	margin-top: em(-10px);
+	& > li {
+		margin-top: em(10px);
+	}
+}
+
+.list-inline {
+	margin: em(-7px);
+	> li {
+		padding: 0;
+		margin: em(7px);
+		display: inline-block;
+	}
+}
+
+.list-square {
+	margin: em(-10px) em(-5px);
+	& > li {
+		display: inline-block;
+		margin: em(10px) em(5px);
+		& > a,
+		.list-link {
+			font-size: em(25px);
+			width: em(47px, 25px);
+			height: em(47px, 25px);
+			line-height: em(45px, 25px);
+			padding: 0;
+			text-align: center;
+			display: inline-block;
+			color: $color-grey;
+			border: 1px solid $color-grey;
+			background-color: transparent;
+		}
+	}
+	&.list-square-sm {
+		& > li {
+			& > a,
+			.list-link {
+				font-size: em(19px);
+				width: em(38px, 19px);
+				height: em(38px, 19px);
+				line-height: em(38px, 19px);
+				padding: 0;
+			}
+		}
+	}
+	a:hover,
+	a:focus,
+	.list-link:hover,
+	.list-link:focus {
+		color: $color-white;
+	}
+	.link-social-facebook:hover,
+	.link-social-facebook:focus {
+		border-color: $color-facebook;
+		background-color: $color-facebook;
+	}
+	.link-social-twitter:hover,
+	.link-social-twitter:focus {
+		border-color: $color-twitter;
+		background-color: $color-twitter;
+	}
+	.link-social-linkedin:hover,
+	.link-social-linkedin:focus {
+		border-color: $color-linkedin;
+		background-color: $color-linkedin;
+	}
+	.link-social-youtube:hover,
+	.link-social-youtube:focus {
+		border-color: $color-youtube;
+		background-color: $color-youtube;
+	}
+	.link-social-pinterest:hover,
+	.link-social-pinterest:focus {
+		border-color: $color-pinterest;
+		background-color: $color-pinterest;
+	}
+}
+
+.list-group {
+	& > .list-group-item {
+		border: 0;
+		border-radius: 0;
+		background-color: transparent;
+		& > a {
+			padding: em(10px) 0;
+			border-bottom: 1px solid $color-light;
+			display: block;
+			text-decoration: none;
+			color: inherit;
+		}
+		& > a:hover,
+		& > a:focus,
+		&.active > a {
+			border-bottom-color: $color-default;
+		}
+	}
+}
+
+.list-rows {
+	.row {
+		& + .row {
+			margin-top: em(16px);
+		}
+	}
+}

@@ -1,0 +1,14 @@
+// ICONS
+// ------------------------------------
+
+[class*="icon-"] {
+	display: inline-block;
+	background-repeat: no-repeat;
+	background-position: center center;
+	background-size: contain;
+}
+.icon-logo-symbol {
+	width: em(90px);
+	height: em(90px);
+	background-image: url('../../img/logo-symbol.png');
+}
