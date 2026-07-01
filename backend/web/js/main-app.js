@@ -1742,4 +1742,24 @@ $(document).ready(function () {
 			$(this).removeClass('fa-eye').addClass('fa-eye-slash');
 		}
 	});
+
+	// Sidebar toggle persistence (after the master backend example): remember the collapsed/expanded
+	// state across page loads via localStorage. The theme's layout.js already toggles the
+	// `page-sidebar-closed` class on click; here we (1) restore the stored state on load and (2) save it
+	// whenever the sidebar is toggled. Only >=992px, where the theme keeps the sidebar in the fixed
+	// layout — below that it switches to a static/off-canvas menu and the closed state does not apply.
+	var SIDEBAR_STATE_KEY = 'sidebar_closed';
+
+	if (typeof Storage !== 'undefined' && localStorage.getItem(SIDEBAR_STATE_KEY) === '1' && $(window).width() >= 992) {
+		$('body').addClass('page-sidebar-closed');
+		$('.page-sidebar-menu').addClass('page-sidebar-menu-closed');
+	}
+
+	// Runs after the theme's own delegated handler (bound on <body>) has toggled the class, so reading
+	// the body class here reflects the post-toggle state.
+	$(document).on('click', '.sidebar-toggler', function () {
+		if (typeof Storage !== 'undefined') {
+			localStorage.setItem(SIDEBAR_STATE_KEY, $('body').hasClass('page-sidebar-closed') ? '1' : '0');
+		}
+	});
 });
