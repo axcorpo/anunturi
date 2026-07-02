@@ -19,6 +19,21 @@ $this->params['breadcrumbs'] = [
 	],
 	$this->title,
 ];
+$this->params['actions'] = [
+	[
+		'visible' => Yii::$app->user->can('createIntegration'),
+		'tag' => 'a',
+		'url' => ['create'],
+		'icon' => 'fa fa-plus',
+		'options' => [
+			'class' => 'btn btn-sm btn-success',
+			'title' => Yii::t('common', 'Create'),
+			'data' => [
+				'toggle' => 'tooltip',
+			],
+		],
+	],
+];
 
 $swSandbox = SwitchInput::widget([
 	'name' => '',

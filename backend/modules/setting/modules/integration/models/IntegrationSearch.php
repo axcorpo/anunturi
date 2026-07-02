@@ -34,6 +34,26 @@ class IntegrationSearch extends DataTableAction
 				'action' => function (Integration $model) {
 					$actions = [];
 
+					if (Yii::$app->user->can('viewIntegration')) {
+						$actions[] = Html::a('<span class="fa fa-eye"></span>', ['view', 'id' => $model->id], [
+							'class' => 'action-view btn btn-xs btn-info',
+							'title' => Yii::t('common', 'View'),
+							'data' => [
+								'toggle' => 'tooltip',
+							],
+						]);
+					}
+
+					if (Yii::$app->user->can('updateIntegration')) {
+						$actions[] = Html::a('<span class="fa fa-edit"></span>', ['update', 'id' => $model->id], [
+							'class' => 'action-update btn btn-xs btn-primary',
+							'title' => Yii::t('common', 'Update'),
+							'data' => [
+								'toggle' => 'tooltip',
+							],
+						]);
+					}
+
 					if (Yii::$app->user->can('deleteIntegration')) {
 						$actions[] = Html::a('<span class="fa fa-trash"></span>', ['delete', 'id' => $model->id], [
 							'class' => 'action-delete btn btn-xs btn-danger',

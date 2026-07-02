@@ -405,13 +405,15 @@ class OpenAIResponsesService
 
 	protected static function getApiKey(): string
 	{
+		// Prefer the default integration; fall back to any active OpenAI one so a
+		// key added without the "Default" checkbox still works.
 		$integration = Integration::find()
 			->where([
 				'status'  => Integration::STATUS_ACTIVE,
 				'deleted' => Integration::NO,
 				'type'    => Integration::TYPE_OPENAI,
-				'default' => Integration::YES,
 			])
+			->orderBy(['default' => SORT_DESC, 'id' => SORT_ASC])
 			->one();
 
 		if (!$integration || empty($integration->getApiKey())) {

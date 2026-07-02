@@ -488,6 +488,7 @@ class AuthItem extends CommonActiveRecord
 						'heading' => Yii::t('common', 'Integrations'),
 						'items' => [
 							'viewIntegration' => Yii::t('common', 'View'),
+							'createIntegration' => Yii::t('common', 'Create'),
 							'updateIntegration' => Yii::t('common', 'Update'),
 							'deleteIntegration' => Yii::t('common', 'Delete'),
 						],

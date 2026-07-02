@@ -3,6 +3,7 @@
 namespace backend\modules\setting\modules\integration\controllers;
 
 use backend\controllers\MainController;
+use backend\modules\setting\modules\integration\models\IntegrationForm;
 use backend\modules\setting\modules\integration\models\IntegrationSearch;
 use common\models\Integration;
 use Yii;
@@ -24,6 +25,11 @@ class IntegrationController extends MainController
 						'allow' => true,
 						'actions' => ['index', 'view', 'dt-integrations'],
 						'roles' => ['viewIntegration'],
+					],
+					[
+						'allow' => true,
+						'actions' => ['create'],
+						'roles' => ['createIntegration'],
 					],
 					[
 						'allow' => true,
@@ -80,6 +86,50 @@ class IntegrationController extends MainController
 	}
 
 	/**
+	 * Creates a new Integration model.
+	 *
+	 * @return mixed
+	 */
+	public function actionCreate()
+	{
+		$model = new IntegrationForm();
+		$model->sandbox = Integration::NO;
+		$model->default = Integration::NO;
+		$model->data = $model->data ?: '{}';
+		$result = true;
+
+		Yii::$app->eventLog->beginRecord($model);
+		if ($model->load(Yii::$app->request->post()) && ($result = $model->save())) {
+			Yii::$app->trigger('invalidate.cache', new \tws\caching\CacheEvent(['key' => 'findAllIntegrations']));
+			Yii::$app->eventLog->endRecord();
+
+			$message = Yii::t('common', 'Record has been created.');
+			if (Yii::$app->request->isAjax) {
+				return $this->asJson([
+					'success' => true,
+					'message' => $message,
+				]);
+			}
+			Yii::$app->session->setFlash('success', $message);
+
+			return $this->redirect(['view', 'id' => $model->id]);
+		}
+
+		if (Yii::$app->request->isAjax) {
+			return $this->asJson([
+				'success' => (bool) $result,
+				'data' => $this->renderAjax('create', [
+					'model' => $model,
+				]),
+			]);
+		}
+
+		return $this->render('create', [
+			'model' => $model,
+		]);
+	}
+
+	/**
 	 * Updates an existing model.
 	 * If update is successful, the browser will be redirected to the 'view' page.
 	 *
@@ -89,7 +139,7 @@ class IntegrationController extends MainController
 	 */
 	public function actionUpdate($id)
 	{
-		$model = $this->findModel($id);
+		$model = $this->findModel($id, IntegrationForm::class);
 		$result = true;
 
 		Yii::$app->eventLog->beginRecord($model);
@@ -216,12 +266,14 @@ class IntegrationController extends MainController
 	 * If the model is not found, a 404 HTTP exception will be thrown.
 	 *
 	 * @param integer $id
+	 * @param class-string<Integration>|null $modelName
 	 * @return Integration the loaded model
 	 * @throws NotFoundHttpException if the model cannot be found
 	 */
-	protected function findModel($id)
+	protected function findModel($id, $modelName = null)
 	{
-		if (($model = Integration::findOne($id)) !== null) {
+		$modelName = is_string($modelName) && class_exists($modelName) ? $modelName : Integration::class;
+		if (($model = $modelName::findOne($id)) !== null) {
 			return $model;
 		}
 
