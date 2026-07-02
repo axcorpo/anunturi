@@ -4,873 +4,942 @@ namespace common\models;
 
 use Yii;
 use yii\helpers\Json;
+use yii\caching\CacheInterface;
 
 /**
- * OblioInvoice model for integration with Oblio API
- * 
- * This model extends the Invoice model and provides methods to interact
- * with the Oblio REST API for invoice management.
- * 
- * API Documentation: https://www.oblio.eu/api
+ * OblioInvoice - single facade for Oblio API + local Invoice mapping.
+ *
+ * Requirements:
+ * - Yii::$app->settings->get('oblioClientId', 'general')
+ * - Yii::$app->settings->get('oblioClientSecret', 'general')
+ *
+ * Notes:
+ * - Uses invoice->getUnserializedValue('details') which must contain:
+ *   - merchant: ['tin' => 'RO...']  (seller CIF in Oblio)
+ *   - client:   (buyer info; B2B if client['tin'] exists)
+ *   - transaction_id: for collect.documentNumber
+ *
+ * - Uses local scopes already present in the project:
+ *   $invoice->getItems()->active(true)->deleted(false)
+ *
+ * - Does NOT require changes in Invoice/Item models.
  */
-class OblioInvoice extends Invoice
+class OblioInvoice
 {
-    const API_BASE_URL = 'https://www.oblio.eu/api';
-    
-    // Cache key for access token
-    const TOKEN_CACHE_KEY = 'oblio_access_token';
-    
-    // API rate limits
-    const RATE_LIMIT_DOCUMENT_GENERATION = 30; // requests per 100 seconds
-    const RATE_LIMIT_OTHER_REQUESTS = 30; // requests per 10 seconds
-    
+    const API_BASE_URL = 'https://www.oblio.eu/api/';
+
+    // Auth
+    const TOKEN_ENDPOINT = 'authorize/token';
+    const TOKEN_CACHE_KEY_PREFIX = 'oblio_access_token:';
+
+    // Rate limits (doc)
+    const RATE_LIMIT_DOCUMENT_GENERATION = 30; // /100 sec
+    const RATE_LIMIT_OTHER_REQUESTS = 30;      // /10 sec
+
     /**
-     * Get Oblio API credentials from settings
-     * 
-     * @return array|null Array with 'client_id' and 'client_secret' or null if not configured
+     * ===========================
+     *  LOCAL INVOICE -> OBLIO
+     * ===========================
      */
-    protected static function getApiCredentials()
+
+    /**
+     * Create Oblio invoice from local Invoice model (and store external_id).
+     *
+     * Options:
+     * - sellerCif: override seller CIF (defaults to details.merchant.tin)
+     * - seriesName: override series (defaults to $invoice->document_series)
+     * - idempotencyKey: override idempotency key (defaults local_invoice_{id})
+     * - mentions: optional mentions
+     * - sendToSpv: bool (default false) - if true, call sendInvoiceToSpv after create
+     */
+    public static function createInvoiceFromLocalInvoice(Invoice $invoice, array $options = []): array
     {
-        $clientId = Yii::$app->settings->get('oblioClientId', 'general');
-        $clientSecret = Yii::$app->settings->get('oblioClientSecret', 'general');
-        
-        if (empty($clientId) || empty($clientSecret)) {
-            return null;
+        // If invoice already sent to Oblio, return the existing invoice URL
+        if (!empty($invoice->external_id)) {
+            $details = $invoice->getUnserializedValue('details') ?: [];
+
+            // Get series and number from stored details (saved when invoice was created)
+            $seriesName = $details['oblio_series'] ?? null;
+            $number = $details['oblio_number'] ?? null;
+
+            if (empty($seriesName) || empty($number)) {
+                // Fallback: try to use invoice's own document series and number
+                $seriesName = $invoice->document_series;
+                $number = $invoice->document_number;
+            }
+
+            if (empty($seriesName) || empty($number)) {
+                throw new \Exception('Cannot retrieve Oblio invoice: missing series or number in invoice details.');
+            }
+
+            // Get invoice details from Oblio to match exact response structure
+            $merchant = $details['merchant'] ?? [];
+            $sellerCif = $options['sellerCif'] ?? ($merchant['tin'] ?? null);
+
+            if (empty($sellerCif)) {
+                throw new \Exception('Cannot retrieve Oblio invoice URL: missing seller CIF.');
+            }
+
+            try {
+                // Get full invoice data from Oblio to match exact response structure
+                $invoiceData = self::viewInvoice($sellerCif, $seriesName, $number);
+
+                // Use stored URL if available, otherwise use from API response
+                $invoiceUrl = $details['oblio_url'] ?? ($invoiceData['data']['link'] ?? null);
+
+                // Store the URL, series, and number in invoice details for future use if not already stored
+                if ($invoiceUrl && empty($details['oblio_url'])) {
+                    $details['oblio_url'] = $invoiceUrl;
+                    $details['oblio_series'] = $seriesName;
+                    $details['oblio_number'] = $number;
+                    $invoice->setSerializedValue('details', $details);
+                    $invoice->save(false);
+                }
+
+                // Return response in exact same structure as successful createInvoice
+                return $invoiceData;
+            } catch (\Exception $e) {
+                throw new \Exception('Invoice already sent to Oblio but could not retrieve URL: ' . $e->getMessage());
+            }
         }
-        
+
+        $payload = self::buildInvoicePayloadFromLocalInvoice($invoice, $options);
+
+        // Oblio expects /docs/invoice for create
+        try {
+            $resp = self::request('/docs/invoice', 'POST', $payload, true);
+        } catch (\Exception $e) {
+            // If error is related to series, fetch and display available series
+            $errorMessage = $e->getMessage();
+            if (stripos($errorMessage, 'seria') !== false ||
+                stripos($errorMessage, 'series') !== false ||
+                stripos($errorMessage, 'Selecteaza') !== false) {
+                $availableSeries = self::getAvailableSeriesForError($payload['cif']);
+                if (!empty($availableSeries)) {
+                    throw new \Exception($errorMessage . "\n\nAvailable series in Oblio for CIF {$payload['cif']}:\n" . $availableSeries);
+                }
+            }
+            throw $e;
+        }
+
+        // Save external reference and URL
+        if (!empty($resp['data']['seriesName']) && !empty($resp['data']['number'])) {
+            // Store Oblio ID (could be id field if available, otherwise use series+number as identifier)
+            $oblioId = $resp['data']['id'] ?? ($resp['data']['seriesName'] . ' ' . $resp['data']['number']);
+            $invoice->external_id = $oblioId;
+
+            // Store the URL, series, and number in details for future retrieval
+            $details = $invoice->getUnserializedValue('details') ?: [];
+            if (isset($resp['data']['link'])) {
+                $details['oblio_url'] = $resp['data']['link'];
+            }
+            $details['oblio_series'] = $resp['data']['seriesName'];
+            $details['oblio_number'] = $resp['data']['number'];
+            $invoice->setSerializedValue('details', $details);
+            $invoice->save(false);
+        }
+
+        // Optionally send to SPV
+        if (!empty($options['sendToSpv']) && !empty($resp['data']['seriesName']) && !empty($resp['data']['number'])) {
+            self::sendInvoiceToSpv(
+                $payload['cif'],
+                $resp['data']['seriesName'],
+                (int)$resp['data']['number']
+            );
+        }
+
+        return $resp;
+    }
+
+    /**
+     * Create Oblio proforma from local Invoice model (and store external_id).
+     *
+     * Options:
+     * - sellerCif: override seller CIF (defaults to details.merchant.tin)
+     * - seriesName: override series (defaults to $invoice->document_series)
+     * - idempotencyKey: override idempotency key (defaults local_invoice_{id})
+     * - mentions: optional mentions
+     */
+    public static function createProformaFromLocalInvoice(Invoice $invoice, array $options = []): array
+    {
+        if (!empty($invoice->external_id)) {
+            return ['data' => ['id' => $invoice->external_id]];
+        }
+
+        if (!array_key_exists('disableAutoSeries', $options)) {
+            $options['disableAutoSeries'] = 1;
+        }
+        if (!array_key_exists('number', $options)) {
+            $options['number'] = $invoice->document_number;
+        }
+
+        $payload = self::buildInvoicePayloadFromLocalInvoice($invoice, $options);
+
+        $resp = self::createProforma($payload);
+
+        if (!empty($resp['data']['seriesName']) && !empty($resp['data']['number'])) {
+            $oblioId = $resp['data']['id'] ?? ($resp['data']['seriesName'] . ' ' . $resp['data']['number']);
+            $invoice->external_id = $oblioId;
+
+            $details = $invoice->getUnserializedValue('details') ?: [];
+            if (isset($resp['data']['link'])) {
+                $details['oblio_url'] = $resp['data']['link'];
+            }
+            $details['oblio_series'] = $resp['data']['seriesName'];
+            $details['oblio_number'] = $resp['data']['number'];
+            $invoice->setSerializedValue('details', $details);
+            $invoice->save(false);
+        }
+
+        return $resp;
+    }
+
+    /**
+     * Build complete Oblio payload using local invoice details + items.
+     */
+    public static function buildInvoicePayloadFromLocalInvoice(Invoice $invoice, array $options = []): array
+    {
+        $details = $invoice->getUnserializedValue('details') ?: [];
+        $merchant = $details['merchant'] ?? [];
+
+        $sellerCif = $options['sellerCif'] ?? ($merchant['tin'] ?? null);
+        if (empty($sellerCif)) {
+            throw new \Exception('Missing seller CIF for Oblio (details.merchant.tin or options[sellerCif]).');
+        }
+
+        // Validate document series and number are available
+        if (empty($invoice->document_series)) {
+            throw new \Exception('Invoice document series is required for Oblio.');
+        }
+        if (empty($invoice->document_number)) {
+            throw new \Exception('Invoice document number is required for Oblio.');
+        }
+
+        $seriesName = $options['seriesName'] ?? $invoice->document_series;
+        if (empty($seriesName)) {
+            throw new \Exception('Document series name is required for Oblio. Please ensure the invoice has a valid document series or provide it in options.');
+        }
+
+        $products = self::buildProductsFromLocalInvoice($invoice);
+
+        $disableAutoSeries = (int)($options['disableAutoSeries'] ?? 0);
+        $payload = [
+            'cif' => $sellerCif,
+            'client' => self::buildClientFromLocalInvoiceDetails($invoice),
+            'issueDate' => date('Y-m-d', strtotime($invoice->issued_at ?: 'now')),
+            'dueDate' => date('Y-m-d', strtotime($invoice->due_at ?: ($invoice->issued_at ?: 'now'))),
+            'seriesName' => $seriesName,
+            'disableAutoSeries' => $disableAutoSeries,
+            'currency' => $invoice->currency ?: 'RON',
+            'exchangeRate' => (float)($invoice->exchange_rate ?: 1),
+            'products' => $products,
+            'idempotencyKey' => $options['idempotencyKey'] ?? ('local_invoice_' . $invoice->id),
+            'mentions' => $options['mentions'] ?? '',
+        ];
+
+        if ($disableAutoSeries === 1) {
+            $number = $options['number'] ?? $invoice->document_number;
+            if (empty($number)) {
+                throw new \Exception('Invoice number is required when disableAutoSeries is enabled for Oblio.');
+            }
+            $payload['number'] = (int)$number;
+        }
+
+        // If paid -> add collect
+        if ((int)$invoice->status === Invoice::STATUS_PAID) {
+            $payload['collect'] = self::buildCollectFromLocalInvoice($invoice);
+        }
+
+        return $payload;
+    }
+
+    /**
+     * Build Oblio client from local Invoice serialized details.
+     * B2B if client.tin exists, else B2C.
+     */
+    public static function buildClientFromLocalInvoiceDetails(Invoice $invoice): array
+    {
+        $details = $invoice->getUnserializedValue('details') ?: [];
+        $client = $details['client'] ?? [];
+
+        // B2B
+        if (!empty($client['tin'])) {
+            return [
+                'cif' => $client['tin'],
+                'name' => $client['name'] ?? 'Client',
+                'rc' => $client['registration_number'] ?? '',
+                'address' => $client['address'] ?? '',
+                'state' => $client['county'] ?? ($client['state'] ?? ''),
+                'city' => $client['locality'] ?? ($client['city'] ?? ''),
+                'country' => $client['country'] ?? '',
+                'iban' => $client['iban'] ?? '',
+                'bank' => $client['bank'] ?? '',
+                'email' => $client['email'] ?? '',
+                'phone' => $client['phone'] ?? '',
+                'contact' => $client['contact'] ?? '',
+                // If you have a reliable flag, set it; otherwise keep 0
+                'vatPayer' => isset($client['vatPayer']) ? (int)$client['vatPayer'] : 0,
+                'save' => 0,
+                'autocomplete' => 0,
+            ];
+        }
+
+        // B2C
         return [
-            'client_id' => $clientId,
-            'client_secret' => $clientSecret,
+            'name' => $client['name'] ?? 'Client',
+            'address' => $client['address'] ?? '',
+            'state' => $client['county'] ?? ($client['state'] ?? ''),
+            'city' => $client['locality'] ?? ($client['city'] ?? ''),
+            'country' => $client['country'] ?? '',
+            'email' => $client['email'] ?? '',
+            'phone' => $client['phone'] ?? '',
+            'vatPayer' => 0,
+            'save' => 0,
+            'autocomplete' => 0,
         ];
     }
-    
+
     /**
-     * Authorize and get access token from Oblio API
-     * 
-     * Uses OAuth 2.0 for authorization. The access token expires after 3600 seconds (1 hour).
-     * Token is cached to avoid unnecessary API calls.
-     * 
-     * @param bool $forceRefresh Force token refresh even if cached token exists
-     * @return array|null Array with token data or null on failure
-     * @throws \Exception
+     * Build products array from local invoice items.
+     * The purchasable unit in this project is a subscription — the product name is built from the
+     * subscription's package plus the billed period stored in the item details.
      */
-    public static function authorize($forceRefresh = false)
+    public static function buildProductsFromLocalInvoice(Invoice $invoice): array
     {
-        // Check cache first
-        if (!$forceRefresh) {
-            $cachedToken = Yii::$app->cache->get(self::TOKEN_CACHE_KEY);
-            if ($cachedToken !== false) {
-                return $cachedToken;
+        $items = $invoice->getItems()->active(true)->deleted(false)->all();
+        if (!$items) {
+            throw new \Exception('Cannot create Oblio invoice: local invoice has no items.');
+        }
+
+        $products = [];
+
+        foreach ($items as $item) {
+            $name = 'Abonament';
+            // Append the package name and the billed period when available.
+            $suffix = [];
+            if ((int)$item->type === Item::TYPE_SUBSCRIPTION && $item->subscription !== null) {
+                $subscription = $item->subscription;
+                if ($subscription->package !== null && ($packageTranslation = $subscription->package->getTranslation()) !== null
+                    && trim((string)$packageTranslation->name) !== '') {
+                    $suffix[] = trim((string)$packageTranslation->name);
+                }
             }
-        }
-        
-        $credentials = self::getApiCredentials();
-        if ($credentials === null) {
-            throw new \Exception('Oblio API credentials not configured in settings.');
-        }
-        
-        $url = self::API_BASE_URL . '/authorize/token';
-        
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $url);
-        curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($credentials));
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, [
-            'Content-Type: application/x-www-form-urlencoded',
-        ]);
-        
-        $response = curl_exec($ch);
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
-        
-        if ($httpCode !== 200) {
-            throw new \Exception('Failed to authorize with Oblio API. HTTP Code: ' . $httpCode);
-        }
-        
-        $data = Json::decode($response);
-        
-        if (isset($data['access_token'])) {
-            // Cache token for slightly less than expiration time to be safe
-            $cacheTime = isset($data['expires_in']) ? (int)$data['expires_in'] - 60 : 3540;
-            Yii::$app->cache->set(self::TOKEN_CACHE_KEY, $data, $cacheTime);
-            
-            return $data;
-        }
-        
-        throw new \Exception('Invalid response from Oblio API authorization.');
-    }
-    
-    /**
-     * Get valid access token
-     * 
-     * Returns cached token or requests a new one if needed
-     * 
-     * @return string Access token
-     * @throws \Exception
-     */
-    protected static function getAccessToken()
-    {
-        $tokenData = self::authorize();
-        return $tokenData['access_token'];
-    }
-    
-    /**
-     * Make API request to Oblio
-     * 
-     * @param string $endpoint API endpoint (e.g., '/docs/invoice')
-     * @param string $method HTTP method (GET, POST, PUT, DELETE)
-     * @param array|null $data Request data
-     * @param bool $isJson Whether to send data as JSON or form-urlencoded
-     * @return array Response data
-     * @throws \Exception
-     */
-    protected static function makeApiRequest($endpoint, $method = 'GET', $data = null, $isJson = true)
-    {
-        $accessToken = self::getAccessToken();
-        $url = self::API_BASE_URL . $endpoint;
-        
-        $ch = curl_init();
-        
-        $headers = [
-            'Authorization: Bearer ' . $accessToken,
-        ];
-        
-        if ($method === 'GET' && $data !== null) {
-            $url .= '?' . http_build_query($data);
-        } else {
-            if ($isJson && $data !== null) {
-                $headers[] = 'Content-Type: application/json';
-                $postData = Json::encode($data);
-            } elseif ($data !== null) {
-                $headers[] = 'Content-Type: application/x-www-form-urlencoded';
-                $postData = http_build_query($data);
+            $itemDetails = $item->getUnserializedValue('details') ?: [];
+            if (!empty($itemDetails['start_at']) || !empty($itemDetails['end_at'])) {
+                $start = !empty($itemDetails['start_at']) ? date('Y-m-d', strtotime($itemDetails['start_at'])) : '';
+                $end = !empty($itemDetails['end_at']) ? date('Y-m-d', strtotime($itemDetails['end_at'])) : '';
+                $range = trim($start . ' - ' . $end, ' -');
+                if ($range !== '') {
+                    $suffix[] = $range;
+                }
             }
+            if ($suffix) {
+                $name .= ' (' . implode(', ', $suffix) . ')';
+            }
+
+            $products[] = [
+                'name' => $name,
+                'code' => '',
+                'description' => '',
+                'price' => $invoice->type == Invoice::TYPE_RECTIFY ? (-1)*(float)$item->price : (float)$item->price,
+                'measuringUnit' => 'buc',
+                'currency' => $item->currency ?: ($invoice->currency ?: 'RON'),
+                'exchangeRate' => (float)($item->exchange_rate ?: ($invoice->exchange_rate ?: 1)),
+                'vatName' => 'Normala',
+                'vatPercentage' => (float)($invoice->vat ?: 0),
+                'vatIncluded' => 1,
+                'quantity' => max(1, (int)$item->quantity),
+                'productType' => 'Serviciu',
+            ];
         }
-        
-        curl_setopt($ch, CURLOPT_URL, $url);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $method);
-        
-        if (isset($postData)) {
-            curl_setopt($ch, CURLOPT_POSTFIELDS, $postData);
+
+        return $products;
+    }
+
+    /**
+     * Build collect payload if invoice is paid.
+     * Uses invoice document series and number only.
+     */
+    public static function buildCollectFromLocalInvoice(Invoice $invoice): array
+    {
+        // Map your payment processor/method if you want; default Card is safe
+        $type = 'Card';
+
+        // Use invoice document series and number only
+        try {
+            $docNo = $invoice->document_number;
+            if (empty($docNo)) {
+                throw new \Exception('Invoice document number is not available.');
+            }
+        } catch (\Exception $e) {
+            throw new \Exception('Cannot build collect: invoice document number id not eligible. ' . $e->getMessage());
         }
-        
-        $response = curl_exec($ch);
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
-        
-        $result = Json::decode($response);
-        
-        if ($httpCode !== 200) {
-            $errorMessage = isset($result['statusMessage']) ? $result['statusMessage'] : 'Unknown error';
-            throw new \Exception('Oblio API Error (HTTP ' . $httpCode . '): ' . $errorMessage);
+
+        return [
+            'type' => $type,
+            'documentNumber' => $docNo,
+            'value' => (float)$invoice->amount,
+            'issueDate' => date('Y-m-d', strtotime($invoice->paid_at ?: ($invoice->issued_at ?: 'now'))),
+            'mentions' => '',
+        ];
+    }
+
+    /**
+     * ===========================
+     *  NOMENCLATURE
+     * ===========================
+     */
+
+    public static function getCompanies(): array
+    {
+        return self::request('/nomenclature/companies', 'GET');
+    }
+
+    public static function getVatRates(string $cif): array
+    {
+        return self::request('/nomenclature/vat_rates', 'GET', ['cif' => $cif], false);
+    }
+
+    public static function getClients(string $cif, array $filters = []): array
+    {
+        return self::request('/nomenclature/clients', 'GET', array_merge(['cif' => $cif], $filters), false);
+    }
+
+    public static function getProducts(string $cif, array $filters = []): array
+    {
+        return self::request('/nomenclature/products', 'GET', array_merge(['cif' => $cif], $filters), false);
+    }
+
+    public static function getSeries(string $cif): array
+    {
+        return self::request('/nomenclature/series', 'GET', ['cif' => $cif], false);
+    }
+
+    /**
+     * Get available series formatted for error messages.
+     *
+     * @param string $cif
+     * @return string
+     */
+    protected static function getAvailableSeriesForError(string $cif): string
+    {
+        try {
+            $seriesResponse = self::getSeries($cif);
+            $seriesList = [];
+
+            if (isset($seriesResponse['data']) && is_array($seriesResponse['data'])) {
+                foreach ($seriesResponse['data'] as $series) {
+                    if (isset($series['name'])) {
+                        $seriesList[] = '- ' . $series['name'];
+                    }
+                }
+            }
+
+            if (empty($seriesList)) {
+                return 'No series found in Oblio for this CIF.';
+            }
+
+            return implode("\n", $seriesList);
+        } catch (\Exception $e) {
+            return 'Could not fetch available series from Oblio: ' . $e->getMessage();
         }
-        
-        return $result;
     }
-    
-    /**
-     * Get list of companies from Oblio nomenclature
-     * 
-     * @return array List of companies
-     * @throws \Exception
-     */
-    public static function getCompanies()
+
+    public static function getLanguages(string $cif): array
     {
-        return self::makeApiRequest('/nomenclature/companies', 'GET');
+        return self::request('/nomenclature/languages', 'GET', ['cif' => $cif], false);
     }
-    
-    /**
-     * Get VAT rates for a company
-     * 
-     * @param string $cif Company CIF/Tax ID
-     * @return array List of VAT rates
-     * @throws \Exception
-     */
-    public static function getVatRates($cif)
+
+    public static function getManagement(string $cif): array
     {
-        return self::makeApiRequest('/nomenclature/vat_rates', 'GET', ['cif' => $cif]);
+        return self::request('/nomenclature/management', 'GET', ['cif' => $cif], false);
     }
-    
+
     /**
-     * Get clients for a company
-     * 
-     * @param string $cif Company CIF/Tax ID
-     * @param array $filters Optional filters: name, clientCif, offset
-     * @return array List of clients
-     * @throws \Exception
+     * ===========================
+     *  CREATE DOCS (RAW JSON)
+     * ===========================
      */
-    public static function getClients($cif, $filters = [])
+
+    public static function createProforma(array $payload): array
     {
-        $params = array_merge(['cif' => $cif], $filters);
-        return self::makeApiRequest('/nomenclature/clients', 'GET', $params);
+        return self::request('/docs/proforma', 'POST', $payload, true);
     }
-    
-    /**
-     * Get products for a company
-     * 
-     * @param string $cif Company CIF/Tax ID
-     * @param array $filters Optional filters: name, code, management, workStation, offset
-     * @return array List of products
-     * @throws \Exception
-     */
-    public static function getProducts($cif, $filters = [])
+
+    public static function createNotice(array $payload): array
     {
-        $params = array_merge(['cif' => $cif], $filters);
-        return self::makeApiRequest('/nomenclature/products', 'GET', $params);
+        return self::request('/docs/notice', 'POST', $payload, true);
     }
-    
-    /**
-     * Get document series for a company
-     * 
-     * @param string $cif Company CIF/Tax ID
-     * @return array List of series
-     * @throws \Exception
-     */
-    public static function getSeries($cif)
+
+    public static function createInvoice(array $payload): array
     {
-        return self::makeApiRequest('/nomenclature/series', 'GET', ['cif' => $cif]);
+        return self::request('/docs/invoice', 'POST', $payload, true);
     }
-    
+
     /**
-     * Get available languages for a company
-     * 
-     * @param string $cif Company CIF/Tax ID
-     * @return array List of languages
-     * @throws \Exception
+     * ===========================
+     *  VIEW DOCS
+     * ===========================
      */
-    public static function getLanguages($cif)
+
+    public static function viewInvoice(string $cif, string $seriesName, int $number): array
     {
-        return self::makeApiRequest('/nomenclature/languages', 'GET', ['cif' => $cif]);
+        return self::request('/docs/invoice', 'GET', [
+            'cif' => $cif,
+            'seriesName' => $seriesName,
+            'number' => $number,
+        ], false);
     }
-    
-    /**
-     * Get management/warehouses for a company
-     * 
-     * @param string $cif Company CIF/Tax ID
-     * @return array List of managements
-     * @throws \Exception
-     */
-    public static function getManagement($cif)
+
+    public static function viewProforma(string $cif, string $seriesName, int $number): array
     {
-        return self::makeApiRequest('/nomenclature/management', 'GET', ['cif' => $cif]);
+        return self::request('/docs/proforma', 'GET', [
+            'cif' => $cif,
+            'seriesName' => $seriesName,
+            'number' => $number,
+        ], false);
     }
-    
-    /**
-     * Create proforma invoice in Oblio
-     * 
-     * @param array $data Proforma data as per Oblio API specification
-     * @return array Response with seriesName, number, link
-     * @throws \Exception
-     */
-    public static function createProforma($data)
+
+    public static function viewNotice(string $cif, string $seriesName, int $number): array
     {
-        return self::makeApiRequest('/docs/proforma', 'POST', $data, true);
+        return self::request('/docs/notice', 'GET', [
+            'cif' => $cif,
+            'seriesName' => $seriesName,
+            'number' => $number,
+        ], false);
     }
-    
+
     /**
-     * Create notice (delivery note) in Oblio
-     * 
-     * @param array $data Notice data as per Oblio API specification
-     * @return array Response with seriesName, number, link
-     * @throws \Exception
+     * ===========================
+     *  COLLECT INVOICE
+     * ===========================
      */
-    public static function createNotice($data)
+
+    public static function collectInvoice(string $cif, string $seriesName, int $number, array $collectData): array
     {
-        return self::makeApiRequest('/docs/notice', 'POST', $data, true);
-    }
-    
-    /**
-     * Create invoice in Oblio
-     * 
-     * @param array $data Invoice data as per Oblio API specification
-     * Example structure:
-     * [
-     *     'cif' => 'RO37311090',
-     *     'client' => [...],
-     *     'issueDate' => '2024-01-15',
-     *     'dueDate' => '2024-01-30',
-     *     'seriesName' => 'FCT',
-     *     'products' => [...],
-     *     // ... other parameters
-     * ]
-     * 
-     * @return array Response with seriesName, number, link
-     * @throws \Exception
-     */
-    public static function createInvoice($data)
-    {
-        return self::makeApiRequest('/docs/invoice', 'POST', $data, true);
-    }
-    
-    /**
-     * Get invoice details from Oblio
-     * 
-     * @param string $cif Company CIF/Tax ID
-     * @param string $seriesName Document series name
-     * @param string $number Document number
-     * @return array Invoice data
-     * @throws \Exception
-     */
-    public static function getInvoice($cif, $seriesName, $number)
-    {
-        $params = [
+        // This endpoint expects form-urlencoded, including nested fields.
+        // We'll send form payload (not JSON) and flatten collect.
+        $payload = [
             'cif' => $cif,
             'seriesName' => $seriesName,
             'number' => $number,
         ];
-        return self::makeApiRequest('/docs/invoice', 'GET', $params);
+
+        // Flatten collect[...] like Oblio examples
+        foreach ($collectData as $k => $v) {
+            $payload["collect[$k]"] = $v;
+        }
+
+        return self::request('/docs/invoice/collect', 'PUT', $payload, false);
     }
-    
+
     /**
-     * Get proforma details from Oblio
-     * 
-     * @param string $cif Company CIF/Tax ID
-     * @param string $seriesName Document series name
-     * @param string $number Document number
-     * @return array Proforma data
-     * @throws \Exception
+     * ===========================
+     *  CANCEL DOCS
+     * ===========================
      */
-    public static function getProforma($cif, $seriesName, $number)
+
+    public static function cancelInvoice(string $cif, string $seriesName, int $number): array
     {
-        $params = [
+        return self::request('/docs/invoice/cancel', 'PUT', [
+            'cif' => $cif,
+            'seriesName' => $seriesName,
+            'number' => $number,
+        ], false);
+    }
+
+    public static function cancelProforma(string $cif, string $seriesName, int $number): array
+    {
+        return self::request('/docs/proforma/cancel', 'PUT', [
+            'cif' => $cif,
+            'seriesName' => $seriesName,
+            'number' => $number,
+        ], false);
+    }
+
+    public static function cancelNotice(string $cif, string $seriesName, int $number): array
+    {
+        return self::request('/docs/notice/cancel', 'PUT', [
+            'cif' => $cif,
+            'seriesName' => $seriesName,
+            'number' => $number,
+        ], false);
+    }
+
+    /**
+     * ===========================
+     *  RESTORE DOCS
+     * ===========================
+     */
+
+    public static function restoreInvoice(string $cif, string $seriesName, int $number): array
+    {
+        return self::request('/docs/invoice/restore', 'PUT', [
+            'cif' => $cif,
+            'seriesName' => $seriesName,
+            'number' => $number,
+        ], false);
+    }
+
+    public static function restoreProforma(string $cif, string $seriesName, int $number): array
+    {
+        return self::request('/docs/proforma/restore', 'PUT', [
+            'cif' => $cif,
+            'seriesName' => $seriesName,
+            'number' => $number,
+        ], false);
+    }
+
+    public static function restoreNotice(string $cif, string $seriesName, int $number): array
+    {
+        return self::request('/docs/notice/restore', 'PUT', [
+            'cif' => $cif,
+            'seriesName' => $seriesName,
+            'number' => $number,
+        ], false);
+    }
+
+    /**
+     * ===========================
+     *  DELETE DOCS
+     * ===========================
+     */
+
+    public static function deleteInvoice(string $cif, string $seriesName, int $number, bool $deleteCollect = false, ?string $idempotencyKey = null): array
+    {
+        $payload = [
+            'cif' => $cif,
+            'seriesName' => $seriesName,
+            'number' => $number,
+            'deleteCollect' => $deleteCollect ? 'true' : 'false',
+        ];
+        if ($idempotencyKey) {
+            $payload['idempotencyKey'] = $idempotencyKey;
+        }
+        return self::request('/docs/invoice', 'DELETE', $payload, false);
+    }
+
+    public static function deleteProforma(string $cif, string $seriesName, int $number, ?string $idempotencyKey = null): array
+    {
+        $payload = [
             'cif' => $cif,
             'seriesName' => $seriesName,
             'number' => $number,
         ];
-        return self::makeApiRequest('/docs/proforma', 'GET', $params);
+        if ($idempotencyKey) {
+            $payload['idempotencyKey'] = $idempotencyKey;
+        }
+        return self::request('/docs/proforma', 'DELETE', $payload, false);
     }
-    
-    /**
-     * Get notice details from Oblio
-     * 
-     * @param string $cif Company CIF/Tax ID
-     * @param string $seriesName Document series name
-     * @param string $number Document number
-     * @return array Notice data
-     * @throws \Exception
-     */
-    public static function getNotice($cif, $seriesName, $number)
+
+    public static function deleteNotice(string $cif, string $seriesName, int $number, ?string $idempotencyKey = null): array
     {
-        $params = [
+        $payload = [
             'cif' => $cif,
             'seriesName' => $seriesName,
             'number' => $number,
         ];
-        return self::makeApiRequest('/docs/notice', 'GET', $params);
+        if ($idempotencyKey) {
+            $payload['idempotencyKey'] = $idempotencyKey;
+        }
+        return self::request('/docs/notice', 'DELETE', $payload, false);
     }
-    
+
     /**
-     * Collect payment for invoice
-     * 
-     * @param string $cif Company CIF/Tax ID
-     * @param string $seriesName Document series name
-     * @param string $number Document number
-     * @param array $collectData Collection data
-     * Example structure:
-     * [
-     *     'type' => 'Ordin de plata',
-     *     'documentNumber' => 'OP 7001',
-     *     'value' => 428.40,
-     *     'issueDate' => '2024-01-15',
-     *     'mentions' => 'Payment note'
-     * ]
-     * 
-     * @return array Response with document data and collects array
-     * @throws \Exception
+     * ===========================
+     *  LIST / REPORTS
+     * ===========================
      */
-    public static function collectInvoice($cif, $seriesName, $number, $collectData)
+
+    public static function listInvoices(string $cif, array $filters = []): array
     {
-        $data = [
+        return self::request('/docs/invoice/list', 'GET', array_merge(['cif' => $cif], $filters), false);
+    }
+
+    /**
+     * ===========================
+     *  SPV / e-INVOICE
+     * ===========================
+     */
+
+    public static function sendInvoiceToSpv(string $cif, string $seriesName, int $number): array
+    {
+        return self::request('/docs/einvoice', 'POST', [
             'cif' => $cif,
             'seriesName' => $seriesName,
             'number' => $number,
-            'collect' => $collectData,
-        ];
-        return self::makeApiRequest('/docs/invoice/collect', 'PUT', $data, false);
+        ], false);
     }
-    
+
     /**
-     * Cancel invoice in Oblio
-     * 
-     * @param string $cif Company CIF/Tax ID
-     * @param string $seriesName Document series name
-     * @param string $number Document number
-     * @return array Response with status message
-     * @throws \Exception
+     * Download SPV archive (binary).
      */
-    public static function cancelInvoice($cif, $seriesName, $number)
+    public static function downloadSpvArchive(string $cif, string $seriesName, int $number): string
     {
-        $data = [
-            'cif' => $cif,
-            'seriesName' => $seriesName,
-            'number' => $number,
-        ];
-        return self::makeApiRequest('/docs/invoice/cancel', 'PUT', $data, false);
-    }
-    
-    /**
-     * Cancel proforma in Oblio
-     * 
-     * @param string $cif Company CIF/Tax ID
-     * @param string $seriesName Document series name
-     * @param string $number Document number
-     * @return array Response with status message
-     * @throws \Exception
-     */
-    public static function cancelProforma($cif, $seriesName, $number)
-    {
-        $data = [
-            'cif' => $cif,
-            'seriesName' => $seriesName,
-            'number' => $number,
-        ];
-        return self::makeApiRequest('/docs/proforma/cancel', 'PUT', $data, false);
-    }
-    
-    /**
-     * Cancel notice in Oblio
-     * 
-     * @param string $cif Company CIF/Tax ID
-     * @param string $seriesName Document series name
-     * @param string $number Document number
-     * @return array Response with status message
-     * @throws \Exception
-     */
-    public static function cancelNotice($cif, $seriesName, $number)
-    {
-        $data = [
-            'cif' => $cif,
-            'seriesName' => $seriesName,
-            'number' => $number,
-        ];
-        return self::makeApiRequest('/docs/notice/cancel', 'PUT', $data, false);
-    }
-    
-    /**
-     * Restore invoice in Oblio
-     * 
-     * @param string $cif Company CIF/Tax ID
-     * @param string $seriesName Document series name
-     * @param string $number Document number
-     * @return array Response with status message
-     * @throws \Exception
-     */
-    public static function restoreInvoice($cif, $seriesName, $number)
-    {
-        $data = [
-            'cif' => $cif,
-            'seriesName' => $seriesName,
-            'number' => $number,
-        ];
-        return self::makeApiRequest('/docs/invoice/restore', 'PUT', $data, false);
-    }
-    
-    /**
-     * Restore proforma in Oblio
-     * 
-     * @param string $cif Company CIF/Tax ID
-     * @param string $seriesName Document series name
-     * @param string $number Document number
-     * @return array Response with status message
-     * @throws \Exception
-     */
-    public static function restoreProforma($cif, $seriesName, $number)
-    {
-        $data = [
-            'cif' => $cif,
-            'seriesName' => $seriesName,
-            'number' => $number,
-        ];
-        return self::makeApiRequest('/docs/proforma/restore', 'PUT', $data, false);
-    }
-    
-    /**
-     * Restore notice in Oblio
-     * 
-     * @param string $cif Company CIF/Tax ID
-     * @param string $seriesName Document series name
-     * @param string $number Document number
-     * @return array Response with status message
-     * @throws \Exception
-     */
-    public static function restoreNotice($cif, $seriesName, $number)
-    {
-        $data = [
-            'cif' => $cif,
-            'seriesName' => $seriesName,
-            'number' => $number,
-        ];
-        return self::makeApiRequest('/docs/notice/restore', 'PUT', $data, false);
-    }
-    
-    /**
-     * Delete invoice in Oblio
-     * 
-     * Note: Can only delete the last document in a series
-     * 
-     * @param string $cif Company CIF/Tax ID
-     * @param string $seriesName Document series name
-     * @param string $number Document number
-     * @return array Response with status message
-     * @throws \Exception
-     */
-    public static function deleteInvoice($cif, $seriesName, $number)
-    {
-        $data = [
-            'cif' => $cif,
-            'seriesName' => $seriesName,
-            'number' => $number,
-        ];
-        return self::makeApiRequest('/docs/invoice', 'DELETE', $data, false);
-    }
-    
-    /**
-     * Delete proforma in Oblio
-     * 
-     * Note: Can only delete the last document in a series
-     * 
-     * @param string $cif Company CIF/Tax ID
-     * @param string $seriesName Document series name
-     * @param string $number Document number
-     * @return array Response with status message
-     * @throws \Exception
-     */
-    public static function deleteProforma($cif, $seriesName, $number)
-    {
-        $data = [
-            'cif' => $cif,
-            'seriesName' => $seriesName,
-            'number' => $number,
-        ];
-        return self::makeApiRequest('/docs/proforma', 'DELETE', $data, false);
-    }
-    
-    /**
-     * Delete notice in Oblio
-     * 
-     * Note: Can only delete the last document in a series
-     * 
-     * @param string $cif Company CIF/Tax ID
-     * @param string $seriesName Document series name
-     * @param string $number Document number
-     * @return array Response with status message
-     * @throws \Exception
-     */
-    public static function deleteNotice($cif, $seriesName, $number)
-    {
-        $data = [
-            'cif' => $cif,
-            'seriesName' => $seriesName,
-            'number' => $number,
-        ];
-        return self::makeApiRequest('/docs/notice', 'DELETE', $data, false);
-    }
-    
-    /**
-     * List invoices with optional filters
-     * 
-     * @param string $cif Company CIF/Tax ID
-     * @param array $filters Optional filters
-     * Available filters:
-     * - seriesName: Filter by series name
-     * - number: Filter by document number
-     * - id: Filter by ID
-     * - draft: -1 (ignore), 0 (not draft), 1 (draft)
-     * - client: Array with cif, email, phone, or code
-     * - canceled: -1 (ignore), 0 (not canceled), 1 (canceled)
-     * - issuedAfter: Start date in YYYY-MM-DD format
-     * - issuedBefore: End date in YYYY-MM-DD format
-     * - withProducts: Include products in result (boolean)
-     * - withEinvoiceStatus: Include e-invoice status (boolean)
-     * - orderBy: Order by field (id, issueDate, number)
-     * - orderDir: ASC or DESC
-     * - limitPerPage: Results per page (max 100)
-     * - offset: Pagination offset (multiples of 100)
-     * 
-     * @return array List of invoices
-     * @throws \Exception
-     */
-    public static function listInvoices($cif, $filters = [])
-    {
-        $params = array_merge(['cif' => $cif], $filters);
-        return self::makeApiRequest('/docs/invoice/list', 'GET', $params);
-    }
-    
-    /**
-     * Send invoice to SPV (e-Factura system)
-     * 
-     * @param string $cif Company CIF/Tax ID
-     * @param string $seriesName Document series name
-     * @param string $number Document number
-     * @return array Response with send status
-     * Response codes:
-     * - -1: e-Invoice not sent to SPV
-     * - 0: e-Invoice arrived at SPV and is being processed
-     * - 1: e-Invoice successfully sent to SPV
-     * - 2: e-Invoice has errors and was not sent to SPV
-     * 
-     * @throws \Exception
-     */
-    public static function sendToSpv($cif, $seriesName, $number)
-    {
-        $data = [
-            'cif' => $cif,
-            'seriesName' => $seriesName,
-            'number' => $number,
-        ];
-        return self::makeApiRequest('/docs/einvoice', 'POST', $data, false);
-    }
-    
-    /**
-     * Download SPV archive for an invoice
-     * 
-     * @param string $cif Company CIF/Tax ID
-     * @param string $seriesName Document series name
-     * @param string $number Document number
-     * @return string Binary content of the archive
-     * @throws \Exception
-     */
-    public static function downloadSpvArchive($cif, $seriesName, $number)
-    {
-        $accessToken = self::getAccessToken();
-        $params = [
-            'cif' => $cif,
-            'seriesName' => $seriesName,
-            'number' => $number,
-        ];
-        $url = self::API_BASE_URL . '/docs/einvoice?' . http_build_query($params);
-        
+        $token = self::getAccessToken();
+        $url = self::API_BASE_URL . 'docs/einvoice?' . http_build_query([
+                'cif' => $cif,
+                'seriesName' => $seriesName,
+                'number' => $number,
+            ]);
+
         $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $url);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, [
-            'Authorization: Bearer ' . $accessToken,
+        curl_setopt_array($ch, [
+            CURLOPT_URL => $url,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_HTTPHEADER => [
+                'Authorization: Bearer ' . $token,
+            ],
+            CURLOPT_CONNECTTIMEOUT => 10,
+            CURLOPT_TIMEOUT => 60,
         ]);
-        
-        $response = curl_exec($ch);
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
-        
-        if ($httpCode !== 200) {
-            throw new \Exception('Failed to download SPV archive. HTTP Code: ' . $httpCode);
+
+        $resp = curl_exec($ch);
+        if ($resp === false) {
+            $err = curl_error($ch);
+            curl_close($ch);
+            throw new \Exception('Failed to download SPV archive: ' . $err);
         }
-        
-        return $response;
+
+        $http = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        if ($http === 401) {
+            self::authorize(true);
+            return self::downloadSpvArchive($cif, $seriesName, $number);
+        }
+        if ($http !== 200) {
+            throw new \Exception('Failed to download SPV archive. HTTP ' . $http);
+        }
+
+        return $resp;
     }
-    
+
     /**
-     * Create webhook subscription
-     * 
-     * @param string $cif Company CIF/Tax ID
-     * @param string $topic Event topic to subscribe to
-     * Available topics:
-     * - stock
-     * - Invoice/SaveDraft
-     * - Proforma/SaveDraft
-     * - Notice/SaveDraft
-     * - TaxReceipt/SaveDraft
-     * - Invoice/Update
-     * - Proforma/Update
-     * - Notice/Update
-     * - Invoice/Cancel
-     * - Proforma/Cancel
-     * - Notice/Cancel
-     * - TaxReceipt/Cancel
-     * - Collect/Inserted
-     * 
-     * @param string $endpoint URL endpoint that will receive webhook notifications
-     * @return array Response with webhook ID
-     * @throws \Exception
+     * ===========================
+     *  WEBHOOKS
+     * ===========================
      */
-    public static function createWebhook($cif, $topic, $endpoint)
+
+    public static function createWebhook(string $cif, string $topic, string $endpoint): array
     {
-        $data = [
+        return self::request('/webhooks', 'POST', [
             'cif' => $cif,
             'topic' => $topic,
             'endpoint' => $endpoint,
+        ], true);
+    }
+
+    public static function listWebhooks(): array
+    {
+        return self::request('/webhooks', 'GET');
+    }
+
+    public static function deleteWebhook(int $id): array
+    {
+        return self::request('/webhooks/' . $id, 'DELETE');
+    }
+
+    /**
+     * ===========================
+     *  CORE REQUEST + AUTH
+     * ===========================
+     */
+
+    /**
+     * Make API request to Oblio.
+     *
+     * @param string $path path starting with "/"
+     * @param string $method GET|POST|PUT|DELETE
+     * @param array|null $data
+     * @param bool $isJson true => send JSON body (for create docs), false => form or query
+     */
+    protected static function request(string $path, string $method = 'GET', array $data = null, bool $isJson = true, bool $retry = true): array
+    {
+        $token = self::getAccessToken();
+
+        $url = rtrim(self::API_BASE_URL, '/') . $path;
+
+        $headers = [
+            'Authorization: Bearer ' . $token,
         ];
-        return self::makeApiRequest('/webhooks', 'POST', $data, true);
+
+        $body = null;
+
+        // GET with query
+        if ($method === 'GET' && !empty($data)) {
+            $url .= (strpos($url, '?') === false ? '?' : '&') . http_build_query($data);
+        } elseif (!empty($data)) {
+            if ($isJson) {
+                $headers[] = 'Content-Type: application/json';
+                $body = Json::encode($data);
+            } else {
+                $headers[] = 'Content-Type: application/x-www-form-urlencoded';
+                $body = http_build_query($data);
+            }
+        }
+
+        $ch = curl_init();
+        curl_setopt_array($ch, [
+            CURLOPT_URL => $url,
+            CURLOPT_CUSTOMREQUEST => $method,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_HTTPHEADER => $headers,
+            CURLOPT_CONNECTTIMEOUT => 10,
+            CURLOPT_TIMEOUT => ($path === '/docs/einvoice' && $method === 'GET') ? 60 : 30,
+        ]);
+
+        if ($body !== null) {
+            curl_setopt($ch, CURLOPT_POSTFIELDS, $body);
+        }
+
+        $resp = curl_exec($ch);
+        if ($resp === false) {
+            $err = curl_error($ch);
+            curl_close($ch);
+            throw new \Exception('Oblio cURL error: ' . $err);
+        }
+
+        $http = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        // Retry on 401 once
+        if ($http === 401 && $retry) {
+            self::authorize(true);
+            return self::request($path, $method, $data, $isJson, false);
+        }
+
+        $decoded = Json::decode($resp);
+
+        if (!is_array($decoded)) {
+            throw new \Exception('Invalid Oblio response (not JSON). HTTP ' . $http);
+        }
+
+        if ($http !== 200) {
+            $msg = $decoded['statusMessage'] ?? 'Unknown error';
+            throw new \Exception('Oblio API error (HTTP ' . $http . '): ' . $msg);
+        }
+
+        // Oblio typically includes status=200
+        if (isset($decoded['status']) && (int)$decoded['status'] !== 200) {
+            $msg = $decoded['statusMessage'] ?? 'Unknown error';
+            throw new \Exception('Oblio API error: ' . $msg);
+        }
+
+        return $decoded;
     }
-    
-    /**
-     * List all webhooks
-     * 
-     * @return array List of webhooks
-     * @throws \Exception
-     */
-    public static function listWebhooks()
+
+    protected static function getAccessToken(): string
     {
-        return self::makeApiRequest('/webhooks', 'GET');
+        $cache = Yii::$app->cache;
+        $key = self::getTokenCacheKey();
+
+        $token = $cache->get($key);
+        if ($token !== false && !empty($token)) {
+            return (string)$token;
+        }
+
+        return self::authorize(false);
     }
-    
-    /**
-     * Delete webhook
-     * 
-     * @param string $webhookId Webhook ID
-     * @return array Response with status message
-     * @throws \Exception
-     */
-    public static function deleteWebhook($webhookId)
+
+    protected static function authorize(bool $forceRefresh = false): string
     {
-        return self::makeApiRequest('/webhooks/' . $webhookId, 'DELETE');
+        $credentials = self::getCredentials();
+        if (empty($credentials['client_id']) || empty($credentials['client_secret'])) {
+            throw new \Exception('Oblio credentials not configured.');
+        }
+
+        /** @var CacheInterface $cache */
+        $cache = Yii::$app->cache;
+        $key = self::getTokenCacheKey();
+
+        if (!$forceRefresh) {
+            $cached = $cache->get($key);
+            if ($cached !== false && !empty($cached)) {
+                return (string)$cached;
+            }
+        }
+
+        $url = rtrim(self::API_BASE_URL, '/') . '/' . self::TOKEN_ENDPOINT;
+
+        $ch = curl_init();
+        curl_setopt_array($ch, [
+            CURLOPT_URL => $url,
+            CURLOPT_POST => true,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_CONNECTTIMEOUT => 10,
+            CURLOPT_TIMEOUT => 20,
+            CURLOPT_HTTPHEADER => [
+                'Content-Type: application/x-www-form-urlencoded',
+            ],
+            CURLOPT_POSTFIELDS => http_build_query([
+                'client_id' => $credentials['client_id'],
+                'client_secret' => $credentials['client_secret'],
+                // Oblio docs show only client_id/client_secret; grant_type usually optional.
+                // Keep it harmlessly here:
+                'grant_type' => 'client_credentials',
+            ]),
+        ]);
+
+        $resp = curl_exec($ch);
+        if ($resp === false) {
+            $err = curl_error($ch);
+            curl_close($ch);
+            throw new \Exception('Oblio auth cURL error: ' . $err);
+        }
+
+        $http = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        $data = Json::decode($resp);
+        if ($http !== 200 || empty($data['access_token'])) {
+            $msg = is_array($data) ? ($data['error_description'] ?? ($data['statusMessage'] ?? 'Invalid auth response')) : 'Invalid auth response';
+            throw new \Exception('Oblio auth failed (HTTP ' . $http . '): ' . $msg);
+        }
+
+        $expires = isset($data['expires_in']) ? (int)$data['expires_in'] : 3600;
+        $ttl = max(60, $expires - 60);
+
+        $cache->set($key, $data['access_token'], $ttl);
+
+        return $data['access_token'];
     }
-    
-    /**
-     * Build client data array for Oblio API
-     * 
-     * @param array $clientData Client information
-     * @return array Formatted client data
-     */
-    public static function buildClientData($clientData)
+
+    protected static function getCredentials(): array
     {
+        // Get credentials from general settings
+        $clientId = Yii::$app->settings->get('oblioClientId', 'general');
+        $clientSecret = Yii::$app->settings->get('oblioClientSecret', 'general');
+
         return [
-            'cif' => $clientData['cif'] ?? '',
-            'name' => $clientData['name'] ?? '',
-            'rc' => $clientData['rc'] ?? '',
-            'code' => $clientData['code'] ?? '',
-            'address' => $clientData['address'] ?? '',
-            'state' => $clientData['state'] ?? '',
-            'city' => $clientData['city'] ?? '',
-            'country' => $clientData['country'] ?? '',
-            'iban' => $clientData['iban'] ?? '',
-            'bank' => $clientData['bank'] ?? '',
-            'email' => $clientData['email'] ?? '',
-            'phone' => $clientData['phone'] ?? '',
-            'contact' => $clientData['contact'] ?? '',
-            'vatPayer' => $clientData['vatPayer'] ?? true,
-            'save' => $clientData['save'] ?? 0,
-            'autocomplete' => $clientData['autocomplete'] ?? 0,
+            'client_id' => $clientId ?: '',
+            'client_secret' => $clientSecret ?: '',
         ];
     }
-    
-    /**
-     * Build product data array for Oblio API
-     * 
-     * @param array $productData Product information
-     * @return array Formatted product data
-     */
-    public static function buildProductData($productData)
+
+    protected static function getTokenCacheKey(): string
     {
-        return [
-            'name' => $productData['name'] ?? '',
-            'code' => $productData['code'] ?? '',
-            'description' => $productData['description'] ?? '',
-            'price' => $productData['price'] ?? 0,
-            'measuringUnit' => $productData['measuringUnit'] ?? 'buc',
-            'currency' => $productData['currency'] ?? 'RON',
-            'exchangeRate' => $productData['exchangeRate'] ?? null,
-            'vatName' => $productData['vatName'] ?? 'Normala',
-            'vatPercentage' => $productData['vatPercentage'] ?? 19,
-            'vatIncluded' => $productData['vatIncluded'] ?? 1,
-            'quantity' => $productData['quantity'] ?? 1,
-            'management' => $productData['management'] ?? null,
-            'productType' => $productData['productType'] ?? 'Serviciu',
-            'nameTranslation' => $productData['nameTranslation'] ?? null,
-            'measuringUnitTranslation' => $productData['measuringUnitTranslation'] ?? null,
-            'save' => $productData['save'] ?? 1,
-        ];
+        $credentials = self::getCredentials();
+        $clientId = (string)($credentials['client_id'] ?? 'default');
+        return self::TOKEN_CACHE_KEY_PREFIX . sha1($clientId);
     }
-    
-    /**
-     * Build discount data array for Oblio API
-     * 
-     * @param string $name Discount name
-     * @param float $discount Discount value
-     * @param string $discountType 'procentual' or 'valoric'
-     * @param int $discountAllAbove Apply to all products above (0 or 1)
-     * @return array Formatted discount data
-     */
-    public static function buildDiscountData($name, $discount, $discountType = 'valoric', $discountAllAbove = 0)
+
+    public static function downloadInvoicePdf($oblioUrl = null)
     {
-        return [
-            'name' => $name,
-            'discount' => $discount,
-            'discountType' => $discountType,
-            'discountAllAbove' => $discountAllAbove,
-        ];
-    }
-    
-    /**
-     * Build complete invoice data for Oblio API
-     * 
-     * Helper method to build a complete invoice structure
-     * 
-     * @param string $cif Company CIF/Tax ID
-     * @param array $client Client data
-     * @param array $products Array of products
-     * @param array $options Additional invoice options
-     * @return array Complete invoice data ready for API submission
-     */
-    public static function buildInvoiceData($cif, $client, $products, $options = [])
-    {
-        return [
-            'cif' => $cif,
-            'client' => self::buildClientData($client),
-            'issueDate' => $options['issueDate'] ?? date('Y-m-d'),
-            'dueDate' => $options['dueDate'] ?? date('Y-m-d', strtotime('+30 days')),
-            'deliveryDate' => $options['deliveryDate'] ?? null,
-            'collectDate' => $options['collectDate'] ?? null,
-            'seriesName' => $options['seriesName'] ?? 'FCT',
-            'disableAutoSeries' => $options['disableAutoSeries'] ?? 0,
-            'number' => $options['number'] ?? null,
-            'language' => $options['language'] ?? 'RO',
-            'precision' => $options['precision'] ?? 2,
-            'currency' => $options['currency'] ?? 'RON',
-            'exchangeRate' => $options['exchangeRate'] ?? null,
-            'products' => $products,
-            'issuerName' => $options['issuerName'] ?? '',
-            'issuerId' => $options['issuerId'] ?? '',
-            'noticeNumber' => $options['noticeNumber'] ?? '',
-            'internalNote' => $options['internalNote'] ?? '',
-            'deputyName' => $options['deputyName'] ?? '',
-            'deputyIdentityCard' => $options['deputyIdentityCard'] ?? '',
-            'deputyAuto' => $options['deputyAuto'] ?? '',
-            'selesAgent' => $options['selesAgent'] ?? '',
-            'mentions' => $options['mentions'] ?? '',
-            'workStation' => $options['workStation'] ?? 'Sediu',
-            'sendEmail' => $options['sendEmail'] ?? 0,
-            'useStock' => $options['useStock'] ?? 1,
-            'spvExtern' => $options['spvExtern'] ?? 0,
-            'collect' => $options['collect'] ?? null,
-            'referenceDocument' => $options['referenceDocument'] ?? null,
-            'orderNumber' => $options['orderNumber'] ?? '',
-            'contractNumber' => $options['contractNumber'] ?? '',
-            'receptionNotice' => $options['receptionNotice'] ?? '',
-            'projectNumber' => $options['projectNumber'] ?? '',
-            'buyerIdentifier' => $options['buyerIdentifier'] ?? '',
-            'clientAccountReference' => $options['clientAccountReference'] ?? '',
-        ];
-    }
-    
-    /**
-     * Create invoice from current model instance
-     * 
-     * Converts current Invoice model to Oblio format and creates it via API
-     * 
-     * @param string $cif Company CIF/Tax ID
-     * @param array $additionalData Additional data to merge
-     * @return array Response from Oblio API
-     * @throws \Exception
-     */
-    public function sendToOblio($cif, $additionalData = [])
-    {
-        // Build invoice data from current model
-        // This is a basic implementation - customize based on your Invoice model structure
-        
-        $invoiceData = [
-            'cif' => $cif,
-            'seriesName' => $this->document_series ?? 'FCT',
-            'issueDate' => $this->issued_at ?? date('Y-m-d'),
-            'dueDate' => $this->due_at ?? date('Y-m-d', strtotime('+30 days')),
-            // Add more fields based on your Invoice model structure
-        ];
-        
-        $invoiceData = array_merge($invoiceData, $additionalData);
-        
-        return self::createInvoice($invoiceData);
+        $ch = curl_init();
+        curl_setopt_array($ch, [
+            CURLOPT_URL => $oblioUrl,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_CONNECTTIMEOUT => 10,
+            CURLOPT_TIMEOUT => 60,
+            CURLOPT_SSL_VERIFYPEER => true,
+        ]);
+
+        $pdfContent = curl_exec($ch);
+
+        curl_close($ch);
+
+        return $pdfContent;
     }
 }
-

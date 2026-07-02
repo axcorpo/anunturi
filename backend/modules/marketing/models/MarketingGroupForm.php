@@ -95,7 +95,7 @@ class MarketingGroupForm extends MarketingGroup
                     $target = $language->language;
                 }
 
-                $marketingGroupTranslation->name = $this->name[$language->language_id] ?: ($source && $target ? Yii::$app->translate->translate($source, $target, $this->name[Yii::$app->language])['data']['translations'][0]['translatedText'] : null);
+                $marketingGroupTranslation->name = $this->name[$language->language_id] ?: ($source && $target ? Yii::$app->translate->translate($source, $target, $this->name[Yii::$app->language]) : null);
 
                 $this->link('marketingGroupTranslations', $marketingGroupTranslation);
             }

@@ -564,6 +564,7 @@ class AnnouncementForm extends Announcement
 			}
 
 			$transaction->commit();
+			\common\services\OpenAiRecordVectorStoreService::scheduleSync((int) $this->id);
 			return true;
 		} catch(\Exception $e) {
 			$transaction->rollBack();

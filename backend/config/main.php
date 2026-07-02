@@ -155,7 +155,9 @@ return [
 			'model' => 'common\models\EventLog',
 		],
 		'translate' => [
-			'class' => 'richweber\google\translate\Translation',
+			// POST-based override (avoids URL length limits on long HTML content, format=html)
+			// which returns the translated text directly instead of the raw API array.
+			'class' => 'common\components\Translation',
 			'key' => 'AIzaSyD3ved624zAP6SSUf_VYEQoS5-vT9n3kfU',
 		],
 	],

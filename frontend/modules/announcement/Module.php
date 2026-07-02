@@ -128,6 +128,11 @@ class Module extends \yii\base\Module implements \yii\base\BootstrapInterface
 			'pattern' => "<action:embed>",
 			'route' => "{$page->controller}/<action>",
 		];
+		// AI chat for refining the listing search (POST JSON; GET only for debugging).
+		$urlRules[] = [
+			'pattern' => 'chat',
+			'route' => "{$page->controller}/chat",
+		];
 		// Create route
 		$urlRules[] = [
 			'pattern' => "<slug>/<code>",

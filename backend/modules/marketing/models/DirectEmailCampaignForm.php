@@ -144,13 +144,13 @@ class DirectEmailCampaignForm extends DirectMarketingCampaign
 					$target = $language->language;
 				}
 
-				$marketingCampaignTranslation->name = $this->name[$language->language_id] ?: ($source && $target ? Yii::$app->translate->translate($source, $target, $this->name[Yii::$app->language])['data']['translations'][0]['translatedText'] : null);
-				$marketingCampaignTranslation->subject = $this->subject[$language->language_id] ?: ($source && $target ? Yii::$app->translate->translate($source, $target, $this->subject[Yii::$app->language])['data']['translations'][0]['translatedText'] : null);
+				$marketingCampaignTranslation->name = $this->name[$language->language_id] ?: ($source && $target ? Yii::$app->translate->translate($source, $target, $this->name[Yii::$app->language]) : null);
+				$marketingCampaignTranslation->subject = $this->subject[$language->language_id] ?: ($source && $target ? Yii::$app->translate->translate($source, $target, $this->subject[Yii::$app->language]) : null);
 				if ($marketingCampaignTranslation->content = $this->content[$language->language_id]) {
 					$marketingCampaignTranslation->content = $this->content[$language->language_id];
 				} else {
 					$translation = html_entity_decode($this->content[Yii::$app->language]);
-					$translation = $source && $target ? Yii::$app->translate->translate($source, $target, $translation)['data']['translations'][0]['translatedText'] : null;
+					$translation = $source && $target ? Yii::$app->translate->translate($source, $target, $translation) : null;
 					$translation = html_entity_decode($translation);
 					$translation = ApplicationBootstrap::recursiveStripTags($translation);
 					$translation = str_replace(['& nbsp;', '< / p>'], [' ', ''], $translation);

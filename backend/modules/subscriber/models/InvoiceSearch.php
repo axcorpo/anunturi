@@ -120,9 +120,21 @@ class InvoiceSearch extends DataTableAction
                             ]);
                         }
                     } else {
+                        if (Yii::$app->user->can('viewInvoice') && empty($model->external_id)) {
+                            $actions[] = Html::a('<span class="fa fa-cloud-upload"></span>', ['send-to-oblio', 'id' => $model->id], [
+                                'class' => 'action-send-oblio btn btn-xs btn-warning',
+                                'title' => Yii::t('common', 'Send to Oblio'),
+                                'data' => [
+                                    'toggle' => 'tooltip',
+                                    'dt-operation' => 'send-to-oblio',
+                                    'dt-confirm' => Yii::t('common', 'Are you sure you want to perform this operation?'),
+                                ],
+                            ]);
+                        }
                         if (Yii::$app->user->can('viewInvoice')) {
+                            $viewClass = !empty($model->external_id) ? 'btn btn-xs purple-sharp btn-slide-center-v' : 'btn btn-xs btn-info btn-slide-center-v';
                             $actions[] = Html::a('<span class="fa fa-eye"></span>', ['view', 'id' => $model->id], [
-                                'class' => 'btn btn-xs btn-info btn-slide-center-v',
+                                'class' => $viewClass,
                                 'title' => Yii::t('common', 'View'),
                                 'data' => [
                                     'toggle' => 'tooltip',

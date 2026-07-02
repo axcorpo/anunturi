@@ -4,9 +4,11 @@
 /* @var $dataProvider yii\data\ActiveDataProvider */
 /* @var $tags array */
 /* @var $modelFilterForm \frontend\modules\announcement\models\FilterForm */
+/* @var $modelListFilterForm \frontend\modules\announcement\models\ListFilterForm */
 
 
 
+use common\helpers\AnnouncementListSearch;
 use common\helpers\DateHelper;
 use common\models\Announcement;
 use common\models\Auction;
@@ -38,16 +40,35 @@ if (Yii::$app->request->get('category') || Yii::$app->request->get('county')) {
 }
 $this->params['breadcrumbs'][] = Html::encode($this->title);
 $tags = [];
+
+// Stable search key (`search` / `cautare`) with fallback to the legacy slugged-label param.
+$searchParam = AnnouncementListSearch::getQueryParam();
+$legacySearchParam = Inflector::slug(Yii::t('label', 'Search'));
+$searchValue = trim((string) Yii::$app->request->get($searchParam, ''));
+if ($searchValue === '' && $legacySearchParam !== $searchParam) {
+	$searchValue = trim((string) Yii::$app->request->get($legacySearchParam, ''));
+}
+
+// The search form keeps the pretty-route scope (category/tag/year) on submit; `county` is submitted
+// as a query param by the filter bar so the URL stays editable as a parameter.
+$searchFormActionParams = ['/announcement/default/index'];
+foreach (['category', 'tag', 'year'] as $routeKey) {
+	$routeVal = Yii::$app->request->get($routeKey);
+	if ($routeVal !== null && $routeVal !== '') {
+		$searchFormActionParams[$routeKey] = $routeVal;
+	}
+}
+$filterToggleTitle = Html::encode(Yii::t('frontend', 'Toggle filters'));
 ?>
 <!-- CATEGORY SEARCH SECTION -->
 <section class="clearfix searchArea banerInfo searchAreaGray">
-    <form>
         <div class="container">
             <div class="row search-row">
                 <?php $form = ActiveForm::begin([
                     'method' => 'GET',
-                    'action' => ['/announcement/default/index'],
+                    'action' => Url::to($searchFormActionParams),
                     'options' => [
+                        'id' => 'announcement-search-filter-form',
                         'class' => 'form-inline'
                     ],
                 ]); ?>
@@ -62,8 +83,8 @@ $tags = [];
                                     'placeholder' => Yii::t('frontend', 'Products, materials, services'),
                                     'autocomplete' => 'off',
                                 ],
-                                'name' => Inflector::slug(Yii::t('label', 'Search')),
-                                'value' => Yii::$app->request->get()[Inflector::slug(Yii::t('label', 'Search'))],
+                                'name' => $searchParam,
+                                'value' => $searchValue,
                                 'clientOptions' => [
                                     'minLength' => 2,
                                     'maxItem' => 10,
@@ -165,12 +186,20 @@ $tags = [];
                 </div>
                 <div class="col-md-2 col-sm-12 col-xs-12 form-col">
                     <?= Html::submitButton('<i class="fa fa-search" aria-hidden="true"></i>', ['class' => 'btn btn-primary', 'title' => Yii::t('frontend', 'Search'), 'data' => ['toggle' => 'tooltip']]) ?>
+                    <button type="button" class="btn btn-default announcement-filter-toggle"
+                            data-target="#announcement-filter-bar"
+                            title="<?= $filterToggleTitle ?>" aria-label="<?= $filterToggleTitle ?>" aria-expanded="false">
+                        <i class="fa fa-sliders announcement-filter-toggle-icon" aria-hidden="true"></i>
+                    </button>
                 </div>
                 <?php ActiveForm::end() ?>
             </div>
         </div>
-    </form>
 </section>
+
+<?= $this->render('_filter-bar', [
+	'modelListFilterForm' => $modelListFilterForm,
+]) ?>
 
 
 <?php if ($breadcrumbs = $this->params['breadcrumbs']): ?>
@@ -883,3 +912,98 @@ $tags = [];
         </div>
     </div>
 </section>
+
+<?= $this->render('_chat') ?>
+
+<?php
+// Filter-bar visibility toggle — initial state comes from the bar's inline display
+// (open when filters are active, see _filter-bar.php).
+$this->registerJs(<<<'JS'
+(function () {
+	var $toggle = $('.announcement-filter-toggle');
+	if (!$toggle.length) return;
+	var $bar = $('#announcement-filter-bar');
+	if (!$bar.length) return;
+
+	function syncState(open) {
+		$toggle.toggleClass('active', open);
+		$toggle.attr('aria-expanded', open ? 'true' : 'false');
+	}
+
+	syncState($bar.is(':visible'));
+
+	$toggle.on('click', function (e) {
+		e.preventDefault();
+		var open = !$bar.is(':visible');
+		$bar.toggle(open);
+		syncState(open);
+	});
+})();
+JS
+, \yii\web\View::POS_READY);
+
+// Clean-URL submit handler — disables empty fields right before GET submit so the browser drops
+// them from the URL (avoids `?search=&county=&...` and the bare trailing `?`). Picks up filter-bar
+// inputs that live outside the <form> and are attached via HTML5 `form="<id>"`.
+$this->registerJs(<<<'JS'
+jQuery(function ($) {
+	$(document).on('submit', '#announcement-search-filter-form', function (ev) {
+		var formEl = this;
+		var selector = '#announcement-search-filter-form [name], [form="announcement-search-filter-form"][name]';
+		var fields = document.querySelectorAll(selector);
+		var anyNonEmpty = false;
+		Array.prototype.forEach.call(fields, function (el) {
+			if (el.tagName === 'BUTTON') return;
+			if (el.type === 'submit' || el.type === 'reset') return;
+			if (el.tagName === 'SELECT' && el.multiple) {
+				var anySelected = Array.prototype.some.call(el.options, function (o) {
+					return o.selected && o.value !== '';
+				});
+				if (!anySelected) {
+					el.disabled = true;
+				} else {
+					anyNonEmpty = true;
+				}
+				return;
+			}
+			var v = (el.value == null ? '' : String(el.value)).trim();
+			if (v === '') {
+				el.disabled = true;
+			} else {
+				anyNonEmpty = true;
+			}
+		});
+		// Always bypass native submission and navigate manually — browsers append a lone `?`
+		// when a GET form submits with no data, and even with disabled fields some engines still
+		// add the `?`. Manual navigation gives us full control over the address bar.
+		ev.preventDefault();
+		var action = (formEl.getAttribute('action') || window.location.pathname).replace(/\?$/, '');
+		if (!anyNonEmpty) {
+			window.location.href = action;
+			return;
+		}
+		var params = [];
+		Array.prototype.forEach.call(fields, function (el) {
+			if (el.disabled) return;
+			if (el.tagName === 'BUTTON') return;
+			if (el.type === 'submit' || el.type === 'reset') return;
+			if (el.tagName === 'SELECT' && el.multiple) {
+				Array.prototype.forEach.call(el.options, function (o) {
+					if (o.selected && o.value !== '') {
+						params.push(encodeURIComponent(el.name) + '=' + encodeURIComponent(o.value));
+					}
+				});
+				return;
+			}
+			var v = (el.value == null ? '' : String(el.value)).trim();
+			if (v !== '') {
+				params.push(encodeURIComponent(el.name) + '=' + encodeURIComponent(v));
+			}
+		});
+		var sep = action.indexOf('?') === -1 ? '?' : '&';
+		window.location.href = params.length ? (action + sep + params.join('&')) : action;
+	});
+});
+JS
+, \yii\web\View::POS_END);
+?>

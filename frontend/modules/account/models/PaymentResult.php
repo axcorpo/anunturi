@@ -6,6 +6,7 @@ use common\models\DocumentSeries;
 use common\models\Invoice;
 use common\models\InvoiceHasTemplate;
 use common\models\Item;
+use common\models\OblioInvoice;
 use common\models\Payment;
 use common\models\Subscription;
 use common\models\Template;
@@ -293,6 +294,33 @@ class PaymentResult extends Model
 	}
 
 	/**
+	 * Pushes the freshly created invoice to Oblio. Failure is non-fatal — the payment flow
+	 * continues and the invoice can be re-sent later from the backend (send-to-oblio).
+	 *
+	 * @return bool
+	 */
+	protected function sendInvoiceToOblio()
+	{
+		$invoice = $this->getInvoice();
+		if ($invoice === null) {
+			return false;
+		}
+
+		try {
+			OblioInvoice::createInvoiceFromLocalInvoice($invoice, [
+				'seriesName' => $invoice->document_series,
+				'disableAutoSeries' => 1,
+				'number' => $invoice->document_number,
+			]);
+		} catch (\Exception $e) {
+			Yii::error('Oblio invoice for subscription payment failed: ' . $e->getMessage(), __METHOD__);
+			return false;
+		}
+
+		return true;
+	}
+
+	/**
 	 * Creates a PDF file for the Invoice model and sends it to email.
 	 *
 	 * @return bool
@@ -315,6 +343,55 @@ class PaymentResult extends Model
 			}
 			$fileName = Yii::$app->name . " #{$invoice->getDocumentSeriesNumber()}.pdf";
 			$filePath = Yii::getAlias("@runtime/" . Yii::$app->security->generateRandomString(8) . "-{$fileName}");
+
+			// If the invoice was pushed to Oblio, attach the Oblio PDF instead of the local mPDF render.
+			$oblioUrl = null;
+			if (!empty($invoice->external_id)) {
+				$details = $invoice->getUnserializedValue('details') ?: [];
+				$oblioUrl = $details['oblio_url'] ?? null;
+
+				if (empty($oblioUrl)) {
+					try {
+						$merchant = $details['merchant'] ?? [];
+						$sellerCif = $merchant['tin'] ?? null;
+						if (!empty($sellerCif)) {
+							$seriesName = $details['oblio_series'] ?? $invoice->document_series;
+							$number = $details['oblio_number'] ?? $invoice->document_number;
+							if (!empty($seriesName) && !empty($number)) {
+								$response = OblioInvoice::viewInvoice($sellerCif, $seriesName, $number);
+								$oblioUrl = $response['data']['link'] ?? null;
+							}
+						}
+					} catch (\Exception $e) {
+						// Fall through to local PDF generation
+					}
+				}
+
+				if (!empty($oblioUrl)) {
+					$pdfContent = OblioInvoice::downloadInvoicePdf($oblioUrl);
+					if ($pdfContent) {
+						file_put_contents($filePath, $pdfContent);
+					} else {
+						$oblioUrl = null;
+					}
+				}
+			}
+
+			if (!empty($oblioUrl) && is_file($filePath)) {
+				$shortCodeValues = $invoice->getShortCodeValues();
+
+				Yii::$app->mailer->compose()
+					->setTo([$user->email => $user->fullName])
+					->setSubject(strtr($invoiceEmailTemplateTranslation->subject, $shortCodeValues))
+					->setHtmlBody(strtr($invoiceEmailTemplateTranslation->content, $shortCodeValues))
+					->attach($filePath, ['fileName' => $fileName])
+					->send();
+
+				@unlink($filePath);
+
+				return true;
+			}
+
 			$pdf = new Pdf([
 				'mode' => Pdf::MODE_UTF8,
 				'format' => Pdf::FORMAT_A4,
@@ -380,6 +457,8 @@ class PaymentResult extends Model
 				if (!$this->saveInvoice()) {
 					throw new \Exception();
 				}
+
+				$this->sendInvoiceToOblio();
 			}
 			$dbTransaction->commit();
 			return true;

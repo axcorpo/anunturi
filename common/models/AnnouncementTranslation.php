@@ -2,6 +2,7 @@
 
 namespace common\models;
 
+use common\helpers\AnnouncementListSearch;
 use Yii;
 use yii2tech\ar\softdelete\SoftDeleteBehavior;
 
@@ -15,6 +16,7 @@ use yii2tech\ar\softdelete\SoftDeleteBehavior;
  * @property string $keywords
  * @property string $description
  * @property string $content
+ * @property string|null $search_text
  * @property int $deleted
  *
  * @property Announcement $announcement
@@ -94,5 +96,24 @@ class AnnouncementTranslation extends CommonActiveRecord
     public function getLanguage()
     {
         return $this->hasOne(Language::class, ['language_id' => 'language_id']);
+    }
+
+    /**
+     * Keeps the denormalized `search_text` column in sync with the translation fields.
+     * The column is the haystack for the listing free-text search — it must be HTML-stripped
+     * and diacritic-folded so LIKE matches against the user's normalized query.
+     */
+    public function beforeSave($insert)
+    {
+        if (!parent::beforeSave($insert)) {
+            return false;
+        }
+        $this->search_text = AnnouncementListSearch::normalize(implode(' ', [
+            (string) $this->title,
+            (string) $this->description,
+            (string) $this->keywords,
+            (string) $this->content,
+        ]));
+        return true;
     }
 }

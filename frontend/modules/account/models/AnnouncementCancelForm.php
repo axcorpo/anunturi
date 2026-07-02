@@ -66,6 +66,7 @@ class AnnouncementCancelForm extends Announcement
 				throw new \Exception();
 			}
 			$dbTransaction->commit();
+			\common\services\OpenAiRecordVectorStoreService::scheduleWithdraw((int) $this->id);
 			return $this;
 		} catch(\Exception $e) {
 			$dbTransaction->rollBack();

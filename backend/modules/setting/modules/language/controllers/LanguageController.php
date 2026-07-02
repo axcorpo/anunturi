@@ -212,7 +212,7 @@ class LanguageController extends MainController
 			$translations = array_fill(0, $counter, '');
 			foreach ($batches as $batchIdx => $batchText) {
 				try {
-					$translatedBatch = Yii::$app->translate->translate($source, $target, $batchText)['data']['translations'][0]['translatedText'];
+					$translatedBatch = Yii::$app->translate->translate($source, $target, $batchText);
 					
 					// Ensure UTF-8 encoding
 					if (!mb_check_encoding($translatedBatch, 'UTF-8')) {

@@ -33,6 +33,7 @@ class Integration extends CommonActiveRecord
 {
 
 	const TYPE_SPV = 1;
+	const TYPE_OPENAI = 2;
 
 	/**
      * {@inheritdoc}
@@ -133,6 +134,49 @@ class Integration extends CommonActiveRecord
 	{
 		return [
 			static::TYPE_SPV => Yii::t('label', 'SPV'),
+			static::TYPE_OPENAI => Yii::t('label', 'OpenAI'),
 		];
+	}
+
+	/**
+	 * Decodes the data JSON column.
+	 *
+	 * @return array
+	 */
+	public function getDecodedData(): array
+	{
+		$decoded = json_decode($this->data, true);
+		if (is_array($decoded)) {
+			return $decoded;
+		}
+
+		// Backward compatibility: plain string is treated as api_key
+		if (!empty($this->data)) {
+			return ['api_key' => $this->data];
+		}
+
+		return [];
+	}
+
+	/**
+	 * Returns the API key from the decoded data.
+	 *
+	 * @return string|null
+	 */
+	public function getApiKey(): ?string
+	{
+		return $this->getDecodedData()['api_key'] ?? null;
+	}
+
+	/**
+	 * Returns a specific setting from the decoded data.
+	 *
+	 * @param string $key
+	 * @param mixed $default
+	 * @return mixed
+	 */
+	public function getSetting(string $key, $default = null)
+	{
+		return $this->getDecodedData()[$key] ?? $default;
 	}
 }

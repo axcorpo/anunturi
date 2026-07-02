@@ -5,6 +5,7 @@ namespace backend\modules\subscriber\controllers;
 use backend\modules\subscriber\models\EInvoiceForm;
 use common\models\Integration;
 use common\models\Invoice;
+use common\models\OblioInvoice;
 use common\models\Template;
 use backend\controllers\MainController;
 use backend\modules\subscriber\models\InvoiceSearch;
@@ -29,7 +30,7 @@ class InvoiceController extends MainController
 				'rules' => [
 					[
 						'allow' => true,
-						'actions' => ['index', 'view', 'dt-invoices', 'e-invoice'],
+						'actions' => ['index', 'view', 'dt-invoices', 'e-invoice', 'send-to-oblio'],
 						'roles' => ['viewInvoice'],
 					],
 				],
@@ -45,6 +46,58 @@ class InvoiceController extends MainController
 		return [
 			'dt-invoices' => InvoiceSearch::class,
 		];
+	}
+
+	/**
+	 * Pushes an invoice to Oblio (manual, idempotent — a re-send returns the stored document).
+	 *
+	 * @param int $id
+	 * @return mixed
+	 */
+	public function actionSendToOblio($id)
+	{
+		$model = $this->findModel($id);
+		$response = [
+			'success' => true,
+			'message' => [
+				'title' => '',
+				'body' => [],
+			],
+		];
+
+		if (!empty($model->external_id)) {
+			$response['message']['title'] = Yii::t('common', 'Invoice already sent to Oblio.');
+			if (Yii::$app->request->isAjax) {
+				return $this->asJson($response);
+			}
+			Yii::$app->session->setFlash('info', $response['message']['title']);
+			return $this->redirect(['index']);
+		}
+
+		try {
+			OblioInvoice::createInvoiceFromLocalInvoice($model);
+
+			$response['message']['title'] = Yii::t('common', 'Invoice {invoice} sent to Oblio successfully.', [
+				'invoice' => $model->getDocumentSeriesNumber(),
+			]);
+		} catch (\Exception $e) {
+			$response['success'] = false;
+			$response['message']['title'] = Yii::t('common', 'Failed to send invoice to Oblio.');
+			$response['message']['body'][] = $e->getMessage();
+
+			Yii::error([
+				'message' => 'Oblio invoice send failed.',
+				'invoice_id' => $model->id,
+				'error' => $e->getMessage(),
+			], 'oblio');
+		}
+
+		if (Yii::$app->request->isAjax) {
+			return $this->asJson($response);
+		}
+
+		Yii::$app->session->setFlash($response['success'] ? 'success' : 'error', [$response['message']]);
+		return $this->redirect(['index']);
 	}
 
     /**

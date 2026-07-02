@@ -211,6 +211,7 @@ class AnnouncementActivateForm extends Announcement
                 }
 
                 $dbTransaction->commit();
+                \common\services\OpenAiRecordVectorStoreService::scheduleSync((int) $this->id);
                 return true;
             } else {
                 $subscription = Subscription::findOne(['id' => $this->subscription_id]);

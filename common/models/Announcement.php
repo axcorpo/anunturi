@@ -500,7 +500,10 @@ class Announcement extends CommonActiveRecord
     public function deleteAnnouncement($announcementModel = null)
     {
         try {
-            Announcement::deleteAll(['id' => $announcementModel->id]);
+			$aid = (int) $announcementModel->id;
+			$meta = \common\services\OpenAiRecordVectorStoreService::detachAnnouncementIndexRow($aid);
+			Announcement::deleteAll(['id' => $aid]);
+			\common\services\OpenAiRecordVectorStoreService::scheduleRemotePurge($meta);
 
             return true;
         } catch (\Exception $e) {
@@ -633,12 +636,64 @@ class Announcement extends CommonActiveRecord
 	}
 
 	/**
+	 * Two-tier LIKE search condition for the public listing.
+	 *
+	 * The main haystack is the denormalized `announcement_translation.search_text` column
+	 * (title + description + keywords + content, HTML-stripped + diacritic-folded — see
+	 * {@see AnnouncementTranslation::beforeSave()}). The user query is normalized via the same
+	 * pipeline ({@see \common\helpers\AnnouncementListSearch::normalize()}) so "gradina" matches
+	 * "grădină" and HTML tags / entities in the source body don't pollute matches.
+	 *
+	 * The remaining columns (ct.name / a.locality / a.county) are matched on the raw user input —
+	 * those fields are short and rarely contain HTML, but diacritics there are NOT folded.
+	 *
+	 * Tokens stay column-local: all tokens must hit the same column to count. Cross-column AND
+	 * would be more permissive but produces noisy results where unrelated rows match because of one
+	 * common word in each column.
+	 *
+	 * @return array Yii where condition (nested OR / AND).
+	 */
+	public static function listSearchSqlLikeOr(string $search): array
+	{
+		$normalized = \common\helpers\AnnouncementListSearch::normalize($search);
+
+		$conds = ['OR'];
+		if ($normalized !== '') {
+			$conds[] = ['LIKE', 'at.search_text', $normalized];
+		}
+		$rawColumns = ['ct.name', 'a.locality', 'a.county'];
+		foreach ($rawColumns as $col) {
+			$conds[] = ['LIKE', $col, $search];
+		}
+
+		$tokens = \common\helpers\AnnouncementListSearch::tokenize($search);
+		if (count($tokens) > 1) {
+			$andSearchText = ['AND'];
+			foreach ($tokens as $token) {
+				$andSearchText[] = ['LIKE', 'at.search_text', $token];
+			}
+			$conds[] = $andSearchText;
+
+			foreach ($rawColumns as $col) {
+				$and = ['AND'];
+				foreach ($tokens as $token) {
+					$and[] = ['LIKE', $col, $token];
+				}
+				$conds[] = $and;
+			}
+		}
+
+		return $conds;
+	}
+
+	/**
 	 * Provides active records by filter criteria.
 	 *
 	 * @param array $params
+	 * @param int[]|null $semanticOrderedIds When non-empty with text search: same SQL LIKE as without vector, but rows whose IDs are listed here are ordered first (vector relevance order among LIKE matches). Without text search: the listing is restricted to these IDs (pure AI mode).
 	 * @return \yii\db\ActiveQuery|CommonActiveQuery
 	 */
-	public static function provideAnnouncements($params = [])
+	public static function provideAnnouncements($params = [], ?array $semanticOrderedIds = null)
 	{
 		$query = static::find()
 			->alias('a')
@@ -777,12 +832,20 @@ class Announcement extends CommonActiveRecord
 			]);
 		}
 		if (!empty($params['search'])) {
-			$query
-				->andWhere([
-				'OR',
-				['LIKE', 'at.title', $params['search']],
-				['LIKE', 'ct.name', $params['search']],
-			]);
+			$query->andWhere(self::listSearchSqlLikeOr((string) $params['search']));
+		}
+		// Filter-bar params (GET, always available — unlike the category-scoped session `filter`).
+		if (isset($params['min_price']) && $params['min_price'] !== '' && $params['min_price'] !== null) {
+			$query->andWhere(['>=', 'a.price', (float) $params['min_price']]);
+		}
+		if (isset($params['max_price']) && $params['max_price'] !== '' && $params['max_price'] !== null) {
+			$query->andWhere(['<=', 'a.price', (float) $params['max_price']]);
+		}
+		if (!empty($params['currency'])) {
+			$query->andWhere(['a.currency' => (array) $params['currency']]);
+		}
+		if (!empty($params['locality'])) {
+			$query->andWhere(['LIKE', 'a.locality', (string) $params['locality']]);
 		}
 
 		if (!empty($params['promotional'])) {
@@ -814,10 +877,35 @@ class Announcement extends CommonActiveRecord
 				])
 			->andWhere(['IS', 'p.id', null])
 			->orderBy(new Expression("GREATEST(COALESCE(a.renewed_at, 0), COALESCE(a.created_at, 0)) DESC"));
-		}
 
-		if ($params['limit']) {
-			$query->limit($params['limit']);
+			$semanticIds = array_values(array_unique(array_map('intval', array_filter($semanticOrderedIds ?? []))));
+			if ($semanticIds !== []) {
+				// Two modes:
+				//   - hybrid (search + IDs): LIKE narrows, semantic IDs only reorder; non-AI matches still appear after AI ones
+				//   - pure AI (no search):   restrict the listing to AI IDs and rank by AI; nothing else shows
+				// Base listing rules (a.status / a.deleted + active subscription) always apply on top.
+				if (empty($params['search'])) {
+					$query->andWhere(['a.id' => $semanticIds]);
+				}
+				$query->orderBy(\common\services\OpenAiRecordVectorStoreService::orderSemanticFirstThenDate('a.id', $semanticIds));
+			} elseif (!empty($params['sort_by'])) {
+				// Semantic ordering wins when present; otherwise honor the user's choice from the filter bar.
+				switch ($params['sort_by']) {
+					case 'price_asc':
+						$query->orderBy(['a.price' => SORT_ASC]);
+						break;
+					case 'price_desc':
+						$query->orderBy(['a.price' => SORT_DESC]);
+						break;
+					case 'most_viewed':
+						$query->orderBy(['a.views' => SORT_DESC, 'a.created_at' => SORT_DESC]);
+						break;
+					case 'newest':
+					default:
+						$query->orderBy(['a.created_at' => SORT_DESC]);
+						break;
+				}
+			}
 		}
 
 		if ($params['limit']) {
