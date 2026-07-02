@@ -240,4 +240,40 @@ class Assistant extends CommonActiveRecord
 			static::TYPE_CHAT => Yii::t('label', 'Chat'),
 		];
 	}
+
+	/**
+	 * Get available models for a specific provider or all models
+	 *
+	 * @param int|null $provider Provider type (PROVIDER_OPENAI, PROVIDER_CLAUDE, or null for all)
+	 * @return array
+	 */
+	public static function getGPTModels($provider = null)
+	{
+		$openaiModels = [
+			'gpt-5.5' => Yii::t('backend', 'GPT-5.5 – Flagship model for complex reasoning and coding'),
+			'gpt-5.5-pro' => Yii::t('backend', 'GPT-5.5 Pro – Highest accuracy for high-stakes work'),
+			'gpt-5.4' => Yii::t('backend', 'GPT-5.4 – Affordable general-purpose model'),
+			'gpt-5.4-mini' => Yii::t('backend', 'GPT-5.4 Mini – Fast, cost-efficient model for everyday tasks'),
+			// Legacy models kept for existing assistants.
+			'gpt-4o' => Yii::t('backend', 'GPT-4o – Multimodal model for text and vision (legacy)'),
+			'gpt-4.1' => Yii::t('backend', 'GPT-4.1 – General-purpose text model (legacy)'),
+			'gpt-4o-mini' => Yii::t('backend', 'GPT-4o Mini – Cost-efficient model for everyday tasks (legacy)'),
+		];
+		$claudeModels = [
+			'claude-fable-5' => Yii::t('backend', 'Claude Fable 5 – Most capable model for demanding reasoning and agentic work'),
+			'claude-opus-4-8' => Yii::t('backend', 'Claude Opus 4.8 – Frontier model for complex reasoning and coding'),
+			'claude-sonnet-4-6' => Yii::t('backend', 'Claude Sonnet 4.6 – Balanced speed and intelligence'),
+			'claude-haiku-4-5' => Yii::t('backend', 'Claude Haiku 4.5 – Fast and lightweight model'),
+		];
+		// Convert provider to integer for comparison
+		$provider = $provider !== null ? (int)$provider : null;
+
+		if ($provider === static::PROVIDER_OPENAI || $provider === Integration::TYPE_OPENAI) {
+			return $openaiModels;
+		}
+		if ($provider === static::PROVIDER_CLAUDE) {
+			return $claudeModels;
+		}
+		return array_merge($openaiModels, $claudeModels);
+	}
 }

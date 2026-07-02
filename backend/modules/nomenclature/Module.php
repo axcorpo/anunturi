@@ -66,7 +66,7 @@ class Module extends \yii\base\Module implements \yii\base\BootstrapInterface
 	public function getNavMenuItems()
 	{
 		return [
-			'roles' => ['viewDocumentSeries', 'viewUnitOfMeasure', 'viewEmailTemplate', 'viewSmsTemplate', 'viewInvoiceTemplate'],
+			'roles' => ['viewDocumentSeries', 'viewUnitOfMeasure', 'viewEmailTemplate', 'viewSmsTemplate', 'viewInvoiceTemplate', 'viewKnowledgeBase', 'viewAssistant'],
 			'icon' => 'fa fa-list',
 			'label' => Yii::t('common', 'Nomenclature'),
 			'url' => '#',
@@ -94,6 +94,26 @@ class Module extends \yii\base\Module implements \yii\base\BootstrapInterface
 					'icon' => 'fa fa-circle-o',
 					'label' => Yii::t('common', 'Unit Of Measures'),
 					'url' => ['/nomenclature-manager/unit-of-measure/index'],
+				],
+				[
+					'roles' => ['viewKnowledgeBase', 'viewAssistant'],
+					'icon' => 'fa fa-reddit',
+					'label' => Yii::t('common', 'AI Assistants'),
+					'url' => '#',
+					'items' => [
+						[
+							'roles' => ['viewKnowledgeBase'],
+							'icon' => 'fa fa-circle-o',
+							'label' => Yii::t('label', 'Knowledge Bases'),
+							'url' => ['/nomenclature-manager/knowledge-base/index'],
+						],
+						[
+							'roles' => ['viewAssistant'],
+							'icon' => 'fa fa-circle-o',
+							'label' => Yii::t('label', 'Assistants'),
+							'url' => ['/nomenclature-manager/assistant/index'],
+						],
+					],
 				],
 				[
 					'roles' => ['viewEmailTemplate', 'viewSmsTemplate', 'viewInvoiceTemplate'],

@@ -406,6 +406,26 @@ class AuthItem extends CommonActiveRecord
 							'restoreUnitOfMeasure' => Yii::t('common', 'Restore'),
 						],
 					],
+					'KnowledgeBase' => [
+						'heading' => Yii::t('label', 'Knowledge Bases'),
+						'items' => [
+							'viewKnowledgeBase' => Yii::t('label', 'View'),
+							'createKnowledgeBase' => Yii::t('label', 'Create'),
+							'updateKnowledgeBase' => Yii::t('label', 'Update'),
+							'deleteKnowledgeBase' => Yii::t('label', 'Delete'),
+							'restoreKnowledgeBase' => Yii::t('label', 'Restore'),
+						],
+					],
+					'Assistant' => [
+						'heading' => Yii::t('label', 'Assistants'),
+						'items' => [
+							'viewAssistant' => Yii::t('label', 'View'),
+							'createAssistant' => Yii::t('label', 'Create'),
+							'updateAssistant' => Yii::t('label', 'Update'),
+							'deleteAssistant' => Yii::t('label', 'Delete'),
+							'restoreAssistant' => Yii::t('label', 'Restore'),
+						],
+					],
 					'EmailTemplate' => [
 						'heading' => Yii::t('common', 'Email Templates'),
 						'items' => [
