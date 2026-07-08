@@ -152,7 +152,10 @@ class EventLog extends Component
 			// Merge defaults with the custom and the provided attributes
 			$attributes = ArrayHelper::merge([
 				'user_id' => Yii::$app->user->id,
-				'model_key' => $this->owner->getPrimaryKey(),
+				// UUID string, never the raw BINARY(16) primary key (model_key is a VARCHAR column)
+				'model_key' => $this->owner instanceof \common\models\UuidActiveRecord
+					? $this->owner->getUuid()
+					: $this->owner->getPrimaryKey(),
 				'model' => $ownerArSubclass,
 				'module' => $this->getModulePath(),
 				'controller' => Yii::$app->controller->id,

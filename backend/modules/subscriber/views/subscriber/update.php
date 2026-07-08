@@ -125,7 +125,7 @@ $this->params['actions'] = [
 					'url' => Url::to(['subscription/dt-subscriptions']),
 					'method' => 'POST',
 					'data' => new JsExpression('function (data) {
-					 	data.subscriber_id = ' . json_encode($model->id) . '; 
+					 	data.subscriber_id = ' . json_encode($model->uuid) . '; 
 						data.deleted = ' . json_encode($showTrash ? Subscription::YES : null) . ';
 					}'),
 					'reloadInterval' => 1 * 60000,

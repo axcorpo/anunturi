@@ -43,6 +43,12 @@ return [
 		'cache' => [
 			'class' => 'yii\caching\FileCache',
 		],
+		'db' => [
+			// Binary-safe query cache keys for BINARY(16) UUID params (see common\db\Command)
+			'commandMap' => [
+				'mysql' => \common\db\Command::class,
+			],
+		],
 		'authManager' => [
 			'class' => 'yii\rbac\DbManager',
 			'cache' => 'cache',

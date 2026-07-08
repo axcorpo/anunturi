@@ -128,7 +128,7 @@ $this->params['actions'] = [
 					'url' => Url::to(['field-option/dt-field-options', 'field_id' => $model->id]),
 					'method' => 'POST',
 					'data' => new JsExpression('function (data) {
-					 	data.field_id = ' . json_encode($model->id) . ';
+					 	data.field_id = ' . json_encode($model->uuid) . ';
 						data.deleted = ' . json_encode($showTrash ? Option::YES : null) . ';
 					}'),
 				],
