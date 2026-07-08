@@ -19,7 +19,7 @@ use yii2tech\ar\position\PositionBehavior;
  * @property Action $action
  * @property Announcement $announcement
  */
-class AnnouncementHasAction extends CommonActiveRecord
+class AnnouncementHasAction extends UuidActiveRecord
 {
 	/**
      * {@inheritdoc}

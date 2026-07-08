@@ -35,7 +35,7 @@ use yii2tech\ar\softdelete\SoftDeleteBehavior;
  * @property string $formattedName
  * @property string $formattedValue
  */
-class SubscriptionFeature extends CommonActiveRecord
+class SubscriptionFeature extends UuidActiveRecord
 {
 	const TYPE_PACKAGE_FEATURE = 1;
 	const TYPE_ADDON_FEATURE = 2;

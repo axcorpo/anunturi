@@ -23,7 +23,7 @@ use yii\rbac\Item;
  * @property AuthItem[] $children
  * @property AuthItem[] $parents
  */
-class AuthItem extends CommonActiveRecord
+class AuthItem extends UuidActiveRecord
 {
 	/**
 	 * @inheritdoc

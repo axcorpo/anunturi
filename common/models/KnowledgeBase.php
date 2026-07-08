@@ -33,7 +33,7 @@ use yii2tech\ar\softdelete\SoftDeleteBehavior;
  * @property User $creator
  * @property User $updater
  */
-class KnowledgeBase extends CommonActiveRecord
+class KnowledgeBase extends UuidActiveRecord
 {
     const PROVIDER_GENERIC = null;
     const PROVIDER_OPENAI = 2;

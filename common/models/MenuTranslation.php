@@ -15,7 +15,7 @@ use Yii;
  * @property Language $language
  * @property Menu $menu
  */
-class MenuTranslation extends CommonActiveRecord
+class MenuTranslation extends UuidActiveRecord
 {
 	/**
 	 * {@inheritdoc}

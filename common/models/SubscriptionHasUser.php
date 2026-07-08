@@ -17,7 +17,7 @@ use yii\behaviors\TimestampBehavior;
  * @property Subscription $subscription
  * @property User $user
  */
-class SubscriptionHasUser extends CommonActiveRecord
+class SubscriptionHasUser extends UuidActiveRecord
 {
 	/**
 	 * {@inheritdoc}

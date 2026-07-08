@@ -20,7 +20,7 @@ use yii2tech\ar\position\PositionBehavior;
  * @property ImportSheet $sheet
  * @property ImportAlternativeSource[] $alternativeSources
  */
-class ImportColumn extends CommonActiveRecord
+class ImportColumn extends UuidActiveRecord
 {
 	const FIELD_TYPE_STRING = 'string';
 	const FIELD_TYPE_NUMBER = 'number';

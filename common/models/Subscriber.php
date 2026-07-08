@@ -51,7 +51,7 @@ use yii2tech\ar\softdelete\SoftDeleteBehavior;
  * @property User $updater
  * @property string fullAddress
  */
-class Subscriber extends CommonActiveRecord
+class Subscriber extends UuidActiveRecord
 {
 	/**
 	 * {@inheritdoc}

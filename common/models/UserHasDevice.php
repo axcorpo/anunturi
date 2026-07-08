@@ -13,7 +13,7 @@ use Yii;
  * @property Device $device
  * @property User $user
  */
-class UserHasDevice extends CommonActiveRecord
+class UserHasDevice extends UuidActiveRecord
 {
     /**
      * {@inheritdoc}

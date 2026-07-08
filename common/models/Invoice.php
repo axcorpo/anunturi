@@ -62,7 +62,7 @@ use yii2tech\ar\softdelete\SoftDeleteBehavior;
  * @method string getDefaultDocumentSeries()
  * @method int getNextDocumentNumber($documentSeries = null)
  */
-class Invoice extends CommonActiveRecord
+class Invoice extends UuidActiveRecord
 {
 	const STATUS_UNPAID = 1;
 	const STATUS_PAID = 2;

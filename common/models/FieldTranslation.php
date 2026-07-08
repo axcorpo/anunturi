@@ -18,7 +18,7 @@ use yii2tech\ar\softdelete\SoftDeleteBehavior;
  * @property Field $field
  * @property Language $language
  */
-class FieldTranslation extends CommonActiveRecord
+class FieldTranslation extends UuidActiveRecord
 {
     /**
      * {@inheritdoc}

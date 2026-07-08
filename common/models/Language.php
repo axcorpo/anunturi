@@ -18,7 +18,7 @@ use yii\caching\TagDependency;
  * @property LanguageTranslate[] $languageTranslates
  * @property LanguageSource[] $ids
  */
-class Language extends CommonActiveRecord
+class Language extends UuidActiveRecord
 {
 	/**
 	 * @inheritdoc

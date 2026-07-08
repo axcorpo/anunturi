@@ -19,7 +19,7 @@ use Yii;
  * @property Language $language
  * @property Page $page
  */
-class PageTranslation extends CommonActiveRecord
+class PageTranslation extends UuidActiveRecord
 {
 	const NO = 0;
 	const YES = 1;

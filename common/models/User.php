@@ -69,7 +69,7 @@ use yii2tech\ar\softdelete\SoftDeleteBehavior;
  * @property string slug
  * @property string|null imageUrl
  */
-class User extends CommonActiveRecord implements \yii\web\IdentityInterface
+class User extends UuidActiveRecord implements \yii\web\IdentityInterface
 {
 	const ACCOUNT_ACTIVATION_AUTOMATIC = 1;
 	const ACCOUNT_ACTIVATION_CONFIRMATION = 2;
@@ -321,10 +321,13 @@ class User extends CommonActiveRecord implements \yii\web\IdentityInterface
 
 	/**
 	 * @inheritdoc
+	 *
+	 * Returns the canonical UUID string (never the raw BINARY(16) value), so the id
+	 * stored in sessions, RBAC assignments and blameable columns stays printable.
 	 */
 	public function getId()
 	{
-		return $this->getPrimaryKey();
+		return static::hasUuidPrimaryKey() ? $this->getUuid() : $this->getPrimaryKey();
 	}
 
 	/**

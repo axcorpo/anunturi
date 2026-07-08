@@ -60,13 +60,16 @@ class KnowledgeBaseSearch extends DataTableAction
 	{
 		return ArrayHelper::toArray($query->all(), [
 			KnowledgeBase::class => [
-				'id',
+				'id' => function (KnowledgeBase $model) {
+					// Expose the UUID string, never the raw BINARY(16) value
+					return $model->uuid;
+				},
 				'action' => function (KnowledgeBase $model) {
 					$actions = [];
 
 					if ($this->requestParams['deleted'] == KnowledgeBase::YES) {
 						if (Yii::$app->user->can('restoreKnowledgeBase')) {
-							$actions[] = Html::a('<span class="fa fa-undo"></span>', ['restore', 'id' => $model->id], [
+							$actions[] = Html::a('<span class="fa fa-undo"></span>', ['restore', 'id' => $model->uuid], [
 								'class' => 'action-view btn btn-xs btn-success',
 								'title' => Yii::t('common', 'Restore'),
 								'data' => [
@@ -77,7 +80,7 @@ class KnowledgeBaseSearch extends DataTableAction
 							]);
 						}
 						if (Yii::$app->user->can('deleteKnowledgeBase')) {
-							$actions[] = Html::a('<span class="fa fa-trash"></span>', ['delete', 'id' => $model->id], [
+							$actions[] = Html::a('<span class="fa fa-trash"></span>', ['delete', 'id' => $model->uuid], [
 								'class' => 'action-delete btn btn-xs btn-danger',
 								'title' => Yii::t('common', 'Delete Permanently'),
 								'data' => [
@@ -89,7 +92,7 @@ class KnowledgeBaseSearch extends DataTableAction
 						}
 					} else {
 						if (Yii::$app->user->can('viewKnowledgeBase')) {
-							$actions[] = Html::a('<span class="fa fa-eye"></span>', ['view', 'id' => $model->id], [
+							$actions[] = Html::a('<span class="fa fa-eye"></span>', ['view', 'id' => $model->uuid], [
 								'class' => 'action-view btn btn-xs btn-info',
 								'title' => Yii::t('common', 'View'),
 								'data' => [
@@ -98,7 +101,7 @@ class KnowledgeBaseSearch extends DataTableAction
 							]);
 						}
 						if (Yii::$app->user->can('updateKnowledgeBase')) {
-							$actions[] = Html::a('<span class="fa fa-edit"></span>', ['update', 'id' => $model->id], [
+							$actions[] = Html::a('<span class="fa fa-edit"></span>', ['update', 'id' => $model->uuid], [
 								'class' => 'action-update btn btn-xs btn-primary',
 								'title' => Yii::t('common', 'Update'),
 								'data' => [
@@ -107,7 +110,7 @@ class KnowledgeBaseSearch extends DataTableAction
 							]);
 						}
 						if (Yii::$app->user->can('deleteKnowledgeBase')) {
-							$actions[] = Html::a('<span class="fa fa-trash"></span>', ['delete', 'id' => $model->id], [
+							$actions[] = Html::a('<span class="fa fa-trash"></span>', ['delete', 'id' => $model->uuid], [
 								'class' => 'action-delete btn btn-xs btn-danger',
 								'title' => Yii::t('common', 'Delete'),
 								'data' => [

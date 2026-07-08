@@ -19,7 +19,7 @@ use yii\behaviors\TimestampBehavior;
  * @property MarketingCampaign $marketingCampaign
  * @property MarketingRecipient $marketingRecipient
  */
-class MarketingCampaignHasRecipient extends CommonActiveRecord
+class MarketingCampaignHasRecipient extends UuidActiveRecord
 {
 	/**
 	 * {@inheritdoc}

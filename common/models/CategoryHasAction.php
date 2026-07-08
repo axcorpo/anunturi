@@ -15,7 +15,7 @@ use yii2tech\ar\position\PositionBehavior;
  * @property Action $action
  * @property Category $category
  */
-class CategoryHasAction extends CommonActiveRecord
+class CategoryHasAction extends UuidActiveRecord
 {
     /**
      * {@inheritdoc}

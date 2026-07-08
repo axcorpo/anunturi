@@ -36,7 +36,7 @@ use yii2tech\ar\softdelete\SoftDeleteBehavior;
  * @property User $creator
  * @property User $updater
  */
-class MarketingCampaign extends CommonActiveRecord
+class MarketingCampaign extends UuidActiveRecord
 {
 	const STATUS_INACTIVE = 0;
 	const STATUS_ACTIVE = 1;

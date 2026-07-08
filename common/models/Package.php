@@ -43,7 +43,7 @@ use yii2tech\ar\softdelete\SoftDeleteBehavior;
  * @property User $creator
  * @property User $updater
  */
-class Package extends CommonActiveRecord
+class Package extends UuidActiveRecord
 {
 	const TYPE_FREE = 1;
 	const TYPE_STANDARD = 2;

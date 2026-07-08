@@ -37,7 +37,7 @@ use yii2tech\ar\softdelete\SoftDeleteBehavior;
  *
  * @property string|null $imageUrl
  */
-class CarouselItem extends CommonActiveRecord
+class CarouselItem extends UuidActiveRecord
 {
 	const TARGET_BLANK = '_blank';
 

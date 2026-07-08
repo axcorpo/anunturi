@@ -16,7 +16,7 @@ use Yii;
  * @property Language $language
  * @property UnitOfMeasure $unitOfMeasure
  */
-class UnitOfMeasureTranslation extends CommonActiveRecord
+class UnitOfMeasureTranslation extends UuidActiveRecord
 {
 	/**
 	 * {@inheritdoc}

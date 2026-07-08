@@ -31,7 +31,7 @@ use yii2tech\ar\softdelete\SoftDeleteBehavior;
  * @property User $creator
  * @property User $updater
  */
-class Action extends CommonActiveRecord
+class Action extends UuidActiveRecord
 {
 	const TYPE_EMPLOY = 1;
 	const TYPE_SEARCH_EMPLOYMENT = 2;

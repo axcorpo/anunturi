@@ -40,7 +40,7 @@ use yii2tech\ar\softdelete\SoftDeleteBehavior;
  * @property User $creator
  * @property User $updater
  */
-class MenuItem extends CommonActiveRecord
+class MenuItem extends UuidActiveRecord
 {
 	/**
 	 * {@inheritdoc}

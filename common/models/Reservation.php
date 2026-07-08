@@ -34,7 +34,7 @@ use yii2tech\ar\softdelete\SoftDeleteBehavior;
  * @property User $creator
  * @property User $updater
  */
-class Reservation extends CommonActiveRecord
+class Reservation extends UuidActiveRecord
 {
     const STATUS_ACTIVE = 1;
     const STATUS_PENDING = 2;

@@ -24,7 +24,7 @@ use yii2tech\ar\softdelete\SoftDeleteBehavior;
  * @property User $creator
  * @property User $updater
  */
-class Conversation extends CommonActiveRecord
+class Conversation extends UuidActiveRecord
 {
     /**
      * {@inheritdoc}

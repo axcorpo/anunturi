@@ -13,7 +13,7 @@ use Yii;
  * @property Promotional $promotional
  * @property Subscription $subscription
  */
-class SubscriptionHasPromotional extends CommonActiveRecord
+class SubscriptionHasPromotional extends UuidActiveRecord
 {
     /**
      * {@inheritdoc}

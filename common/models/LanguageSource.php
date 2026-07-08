@@ -14,7 +14,7 @@ use Yii;
  * @property LanguageTranslate[] $languageTranslates
  * @property Language[] $languages
  */
-class LanguageSource extends CommonActiveRecord
+class LanguageSource extends UuidActiveRecord
 {
 	/**
 	 * @inheritdoc

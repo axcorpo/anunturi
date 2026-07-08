@@ -27,7 +27,7 @@ use yii2tech\ar\softdelete\SoftDeleteBehavior;
  * @property AiConversation $conversation
  * @property User $creator
  */
-class AiMessage extends CommonActiveRecord
+class AiMessage extends UuidActiveRecord
 {
 	const STATUS_IN_PROGRESS = 'in_progress';
 	const STATUS_COMPLETED = 'completed';

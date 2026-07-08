@@ -29,7 +29,7 @@ use yii2tech\ar\softdelete\SoftDeleteBehavior;
  * @property User $creator
  * @property User $updater
  */
-class DocumentSeries extends CommonActiveRecord
+class DocumentSeries extends UuidActiveRecord
 {
 
 	CONST TYPE_INVOICE = 1;

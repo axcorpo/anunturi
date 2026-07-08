@@ -1,9 +1,11 @@
 <?php
 
-use yii\db\Migration;
+use common\db\Migration;
 
 /**
  * Handles the creation of table `country`.
+ *
+ * The primary key is a UUID v7 generated in PHP, stored as BINARY(16).
  */
 class m180216_050535_create_country_table extends Migration
 {
@@ -270,7 +272,7 @@ class m180216_050535_create_country_table extends Migration
 		}
 
 		$this->createTable('{{%country}}', [
-			'id' => $this->primaryKey(),
+			'id' => $this->binaryUuidPrimaryKey(),
 			'iso_alpha2' => $this->char(2)->notNull()->comment('Two-letter country code (ISO 3166-1 alpha-2)'),
 			'iso_alpha3' => $this->char(3)->notNull()->comment('Three-letter country code (ISO 3166-1 alpha-3)'),
 			'iso_numeric' => $this->string(3)->notNull()->comment('Three-digit country number (ISO 3166-1 numeric)'),
@@ -284,7 +286,14 @@ class m180216_050535_create_country_table extends Migration
 			'deleted' => $this->smallInteger(4)->defaultValue(0),
 		], $tableOptions);
 
+		// Seed rows need explicit ids now that the primary key is no longer auto-incremented
+		$rows = array_map(function ($row) {
+			array_unshift($row, $this->newUuidBytes());
+			return $row;
+		}, $this->countries);
+
 		$this->batchInsert('{{%country}}', [
+			'id',
 			'iso_alpha2',
 			'iso_alpha3',
 			'iso_numeric',
@@ -296,7 +305,7 @@ class m180216_050535_create_country_table extends Migration
 			'requires_postcode',
 			'status',
 			'deleted',
-		], $this->countries);
+		], $rows);
 
 		$this->createIndex('deleted', '{{%country}}', 'deleted');
 	}

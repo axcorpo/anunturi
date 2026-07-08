@@ -29,7 +29,7 @@ use yii2tech\ar\softdelete\SoftDeleteBehavior;
  * @property User $creator
  * @property User $updater
  */
-class Integration extends CommonActiveRecord
+class Integration extends UuidActiveRecord
 {
 
 	const TYPE_SPV = 1;

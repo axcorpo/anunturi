@@ -13,7 +13,7 @@ use Yii;
  * @property Invoice $invoice
  * @property Template $template
  */
-class InvoiceHasTemplate extends CommonActiveRecord
+class InvoiceHasTemplate extends UuidActiveRecord
 {
 	/**
 	 * {@inheritdoc}

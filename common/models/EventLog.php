@@ -27,7 +27,7 @@ use yii2tech\ar\softdelete\SoftDeleteBehavior;
  *
  * @property User $user
  */
-class EventLog extends CommonActiveRecord
+class EventLog extends UuidActiveRecord
 {
 	/**
 	 * {@inheritdoc}

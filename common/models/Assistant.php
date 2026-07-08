@@ -33,7 +33,7 @@ use yii2tech\ar\softdelete\SoftDeleteBehavior;
  * @property User $creator
  * @property User $updater
  */
-class Assistant extends CommonActiveRecord
+class Assistant extends UuidActiveRecord
 {
 	const PROVIDER_OPENAI = 1;
 	const PROVIDER_CLAUDE = 2;

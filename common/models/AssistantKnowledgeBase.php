@@ -16,7 +16,7 @@ use yii\behaviors\TimestampBehavior;
  * @property Assistant $assistant
  * @property KnowledgeBase $knowledgeBase
  */
-class AssistantKnowledgeBase extends CommonActiveRecord
+class AssistantKnowledgeBase extends UuidActiveRecord
 {
     /**
      * {@inheritdoc}

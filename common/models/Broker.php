@@ -26,7 +26,7 @@ use yii2tech\ar\softdelete\SoftDeleteBehavior;
  * @property User $creator
  * @property User $updater
  */
-class Broker extends CommonActiveRecord
+class Broker extends UuidActiveRecord
 {
     /**
      * {@inheritdoc}

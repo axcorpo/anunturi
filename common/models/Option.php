@@ -33,7 +33,7 @@ use yii2tech\ar\softdelete\SoftDeleteBehavior;
  * @property User $creator
  * @property User $updater
  */
-class Option extends CommonActiveRecord
+class Option extends UuidActiveRecord
 {
 	/**
 	 * {@inheritdoc}

@@ -25,7 +25,7 @@ use yii2tech\ar\softdelete\SoftDeleteBehavior;
  * @property User $creator
  * @property User $updater
  */
-class FeatureModule extends CommonActiveRecord
+class FeatureModule extends UuidActiveRecord
 {
 	const GENERAL = 'General';
 

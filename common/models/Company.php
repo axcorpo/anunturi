@@ -79,7 +79,7 @@ use yii2tech\ar\softdelete\SoftDeleteBehavior;
  * @property string imageUrl
  * @property string signatureUrl
  */
-class Company extends CommonActiveRecord
+class Company extends UuidActiveRecord
 {
 	const TAXATION_AFP = 1;
 	const TAXATION_VAT_PAYER = 2;

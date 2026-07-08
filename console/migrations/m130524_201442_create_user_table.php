@@ -1,9 +1,11 @@
 <?php
 
-use yii\db\Migration;
+use common\db\Migration;
 
 /**
  * Handles the creation of table `user`.
+ *
+ * The primary key is a UUID v7 generated in PHP, stored as BINARY(16).
  */
 class m130524_201442_create_user_table extends Migration
 {
@@ -15,8 +17,8 @@ class m130524_201442_create_user_table extends Migration
 		}
 
 		$this->createTable('{{%user}}', [
-			'id' => $this->primaryKey(),
-			'parent_id' => $this->integer()->defaultValue(null),
+			'id' => $this->binaryUuidPrimaryKey(),
+			'parent_id' => $this->binaryUuid(false),
 			'auth_key' => $this->string(32)->notNull(),
 			'password_hash' => $this->string()->notNull(),
 			'password_reset_token' => $this->string()->unique(),

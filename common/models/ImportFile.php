@@ -25,7 +25,7 @@ use yii\caching\TagDependency;
  * @property User $creator
  * @property User $updater
  */
-class ImportFile extends CommonActiveRecord
+class ImportFile extends UuidActiveRecord
 {
 	/**
 	 * {@inheritdoc}

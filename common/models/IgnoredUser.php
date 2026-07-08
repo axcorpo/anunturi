@@ -21,7 +21,7 @@ use yii\behaviors\TimestampBehavior;
  * @property User $creator
  * @property User $updater
  */
-class IgnoredUser extends CommonActiveRecord
+class IgnoredUser extends UuidActiveRecord
 {
     /**
      * {@inheritdoc}

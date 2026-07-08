@@ -15,7 +15,7 @@ use Yii;
  * @property Language $language
  * @property MarketingGroup $marketingGroup
  */
-class MarketingGroupTranslation extends CommonActiveRecord
+class MarketingGroupTranslation extends UuidActiveRecord
 {
     /**
      * {@inheritdoc}

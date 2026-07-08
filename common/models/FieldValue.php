@@ -28,7 +28,7 @@ use yii2tech\ar\softdelete\SoftDeleteBehavior;
  * @property Option $option
  * @property Announcement $announcement
  */
-class FieldValue extends CommonActiveRecord
+class FieldValue extends UuidActiveRecord
 {
     /**
      * {@inheritdoc}

@@ -20,7 +20,7 @@ use yii2tech\ar\softdelete\SoftDeleteBehavior;
  * @property AiMessage[] $messages
  * @property User $creator
  */
-class AiConversation extends CommonActiveRecord
+class AiConversation extends UuidActiveRecord
 {
     /**
      * {@inheritdoc}

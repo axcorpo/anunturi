@@ -18,7 +18,7 @@ use yii2tech\ar\softdelete\SoftDeleteBehavior;
  * @property int $status
  * @property int $deleted
  */
-class County extends CommonActiveRecord
+class County extends UuidActiveRecord
 {
 	/**
 	 * {@inheritdoc}

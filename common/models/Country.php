@@ -29,7 +29,7 @@ use yii2tech\ar\softdelete\SoftDeleteBehavior;
  * @property CountryTranslation $translation
  * @property Language[] $languages
  */
-class Country extends CommonActiveRecord
+class Country extends UuidActiveRecord
 {
     /**
      * @inheritdoc

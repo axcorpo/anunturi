@@ -40,7 +40,7 @@ use yii2tech\ar\softdelete\SoftDeleteBehavior;
  * @property User $creator
  * @property User $updater
  */
-class Auction extends CommonActiveRecord
+class Auction extends UuidActiveRecord
 {
 	const POSITION_HOME_PAGE_300X440_LEFT = 1;
 	const POSITION_HOME_PAGE_300X440_RIGHT = 2;

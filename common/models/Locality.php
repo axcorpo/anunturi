@@ -20,7 +20,7 @@ use yii2tech\ar\softdelete\SoftDeleteBehavior;
  * @property int $status
  * @property int $deleted
  */
-class Locality extends CommonActiveRecord
+class Locality extends UuidActiveRecord
 {
 	/**
 	 * {@inheritdoc}

@@ -313,7 +313,7 @@ class AssistantController extends MainController
 	 * Finds the Assistant model(s) based on its primary key value.
 	 * A 404 HTTP exception will be thrown if no record was found.
 	 *
-	 * @param int|array $id
+	 * @param string|array $id UUID string(s) as received from the URL
 	 * @param \yii\db\ActiveRecord|null $modelName
 	 * @param bool $asActiveQuery
 	 * @return \yii\db\ActiveQuery|\yii\db\ActiveRecord|Assistant|AssistantForm
@@ -321,20 +321,22 @@ class AssistantController extends MainController
 	 */
 	protected function findModel($id, $modelName = null, $asActiveQuery = false)
 	{
+		/* @var $modelName string|\common\models\UuidActiveRecord */
 		$modelName = class_exists($modelName) ? $modelName : Assistant::class;
-		$query = $modelName::find()->andWhere([
-			'id' => $id,
-		]);
 
 		if ($asActiveQuery) {
+			// Bulk actions: $id may be an array of UUID strings; UuidActiveQuery converts them to BINARY(16)
+			$query = $modelName::find()->andWhere([
+				'id' => $id,
+			]);
 			if (!$query->count()) {
 				throw new NotFoundHttpException(Yii::t('common', 'The requested page does not exist.'));
 			}
 			return $query;
 		}
 
-		$query->andWhere(['deleted' => Assistant::NO]);
-		if (($model = $query->one()) !== null) {
+		$model = $modelName::findOneByUuid($id);
+		if ($model !== null && $model->deleted == Assistant::NO) {
 			return $model;
 		}
 

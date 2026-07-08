@@ -31,7 +31,7 @@ use yii2tech\ar\softdelete\SoftDeleteBehavior;
  * @property string $formattedName
  * @property string $formattedValue
  */
-class PackageFeature extends CommonActiveRecord
+class PackageFeature extends UuidActiveRecord
 {
 	/**
 	 * {@inheritdoc}

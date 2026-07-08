@@ -29,7 +29,7 @@ use yii2tech\ar\softdelete\SoftDeleteBehavior;
  * @property User $creator
  * @property User $updater
  */
-class PaymentMetadata extends CommonActiveRecord
+class PaymentMetadata extends UuidActiveRecord
 {
 	const PAYMENT_METHOD_CASH = 1;
 	const PAYMENT_METHOD_CARD = 2;

@@ -1,6 +1,6 @@
 <?php
 
-use yii\db\Migration;
+use common\db\Migration;
 use yii\db\Query;
 
 /**
@@ -13873,6 +13873,7 @@ class m180216_050535_update_locality_table extends Migration
 	{
 		foreach ($this->localities as $row) {
 			$this->insert('locality', [
+				'id' => $this->newUuidBytes(),
 				'name' => $row[0],
 				'diacritics' => $row[1],
 				'county' => $row[2],

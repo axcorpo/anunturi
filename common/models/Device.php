@@ -24,7 +24,7 @@ use yii\behaviors\TimestampBehavior;
  * @property User $creator
  * @property User $updater
  */
-class Device extends CommonActiveRecord
+class Device extends UuidActiveRecord
 {
     /**
      * {@inheritdoc}

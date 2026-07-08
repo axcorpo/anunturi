@@ -4,7 +4,6 @@ namespace common\models;
 
 use Yii;
 use yii\behaviors\TimestampBehavior;
-use yii\db\ActiveRecord;
 
 /**
  * OpenAI vector store file mapping for announcements (semantic index).
@@ -21,7 +20,7 @@ use yii\db\ActiveRecord;
  * @property int $status
  * @property int $deleted
  */
-class RecordVectorIndex extends ActiveRecord
+class RecordVectorIndex extends UuidActiveRecord
 {
 	public const STATUS_INACTIVE = 0;
 	public const STATUS_ACTIVE = 1;

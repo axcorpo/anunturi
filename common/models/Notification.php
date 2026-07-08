@@ -31,7 +31,7 @@ use yii2tech\ar\softdelete\SoftDeleteBehavior;
  * @property User $creator
  * @property User $updater
  */
-class Notification extends CommonActiveRecord
+class Notification extends UuidActiveRecord
 {
 	const TYPE_APP = 1;
 	const TYPE_USER = 2;

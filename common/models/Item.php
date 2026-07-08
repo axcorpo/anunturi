@@ -32,7 +32,7 @@ use yii2tech\ar\softdelete\SoftDeleteBehavior;
  * @property User $creator
  * @property User $updater
  */
-class Item extends CommonActiveRecord
+class Item extends UuidActiveRecord
 {
 	const TYPE_SUBSCRIPTION = 1;
 

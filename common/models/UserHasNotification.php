@@ -17,7 +17,7 @@ use yii\behaviors\TimestampBehavior;
  * @property Notification $notification
  * @property User $user
  */
-class UserHasNotification extends CommonActiveRecord
+class UserHasNotification extends UuidActiveRecord
 {
 	/**
 	 * {@inheritdoc}

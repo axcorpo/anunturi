@@ -17,7 +17,7 @@ use yii2tech\ar\softdelete\SoftDeleteBehavior;
  * @property Language $language
  * @property Review $review
  */
-class ReviewTranslation extends CommonActiveRecord
+class ReviewTranslation extends UuidActiveRecord
 {
     /**
      * {@inheritdoc}

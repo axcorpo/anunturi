@@ -38,7 +38,7 @@ use yii2tech\ar\softdelete\SoftDeleteBehavior;
  * @property User $creator
  * @property User $updater
  */
-class Review extends CommonActiveRecord
+class Review extends UuidActiveRecord
 {
     const REVIEW_PENDING = 0;
     const REVIEW_CONFIRMED = 1;

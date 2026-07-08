@@ -32,7 +32,7 @@ use yii2tech\ar\softdelete\SoftDeleteBehavior;
  * @property User $creator
  * @property User $updater
  */
-class Carousel extends CommonActiveRecord
+class Carousel extends UuidActiveRecord
 {
 	const TYPE_MAIN = 1;
 	const TYPE_PROMOTIONAL = 2;

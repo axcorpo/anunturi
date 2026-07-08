@@ -20,7 +20,7 @@ use Yii;
  * @property Company $company
  * @property Language $language
  */
-class CompanyTranslation extends CommonActiveRecord
+class CompanyTranslation extends UuidActiveRecord
 {
 	/**
 	 * {@inheritdoc}

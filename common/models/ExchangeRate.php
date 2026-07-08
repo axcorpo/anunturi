@@ -15,7 +15,7 @@ use Yii;
  * @property string $country_code
  * @property int $deleted
  */
-class ExchangeRate extends CommonActiveRecord
+class ExchangeRate extends UuidActiveRecord
 {
 	/**
 	 * @inheritdoc

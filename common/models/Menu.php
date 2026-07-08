@@ -31,7 +31,7 @@ use yii2tech\ar\softdelete\SoftDeleteBehavior;
  * @property User $creator
  * @property User $updater
  */
-class Menu extends CommonActiveRecord
+class Menu extends UuidActiveRecord
 {
 	const POSITION_HEADER = 1;
 	const POSITION_TOPBAR = 2;

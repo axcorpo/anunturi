@@ -15,7 +15,7 @@ use Yii;
  * @property Carousel $carousel
  * @property Language $language
  */
-class CarouselTranslation extends CommonActiveRecord
+class CarouselTranslation extends UuidActiveRecord
 {
 	/**
 	 * {@inheritdoc}

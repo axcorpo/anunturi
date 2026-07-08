@@ -174,7 +174,7 @@ use yii\helpers\Url;
 					],
 					'pluginOptions' => [
 						'depends' => [Html::getInputId($model, 'provider')],
-						'url' => Url::to(['get-knowledge-bases', 'assistant_id' => $model->isNewRecord ? null : $model->id]),
+						'url' => Url::to(['get-knowledge-bases', 'assistant_id' => $model->isNewRecord ? null : $model->uuid]),
 						'placeholder' => Yii::t('common', 'Choose'),
 						'initialize' => true,
 					],

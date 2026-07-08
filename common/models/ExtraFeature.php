@@ -26,7 +26,7 @@ use yii\helpers\ArrayHelper;
  * @property User $creator
  * @property User $updater
  */
-class ExtraFeature extends CommonActiveRecord
+class ExtraFeature extends UuidActiveRecord
 {
     /**
      * {@inheritdoc}

@@ -16,7 +16,7 @@ use Yii;
  * @property Language $language
  * @property Package $package
  */
-class PackageTranslation extends CommonActiveRecord
+class PackageTranslation extends UuidActiveRecord
 {
 	/**
 	 * {@inheritdoc}

@@ -16,7 +16,7 @@ use Yii;
  * @property ImportColumn[] $columns
  * @property ImportFile $file
  */
-class ImportSheet extends CommonActiveRecord
+class ImportSheet extends UuidActiveRecord
 {
 	/**
 	 * {@inheritdoc}

@@ -13,7 +13,7 @@ use Yii;
  * @property Announcement $announcement
  * @property ExtraFeature $extraFeature
  */
-class ExtraFeatureHasAnnouncement extends CommonActiveRecord
+class ExtraFeatureHasAnnouncement extends UuidActiveRecord
 {
     /**
      * {@inheritdoc}

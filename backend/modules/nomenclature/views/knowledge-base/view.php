@@ -42,7 +42,7 @@ $this->params['actions'] = [
 	[
 		'visible' => Yii::$app->user->can('updateKnowledgeBase'),
 		'tag' => 'a',
-		'url' => ['update', 'id' => $model->id],
+		'url' => ['update', 'id' => $model->uuid],
 		'icon' => 'fa fa-edit',
 		'options' => [
 			'class' => 'btn btn-sm btn-primary',
@@ -55,7 +55,7 @@ $this->params['actions'] = [
 	[
 		'visible' => Yii::$app->user->can('deleteKnowledgeBase'),
 		'tag' => 'a',
-		'url' => ['delete', 'id' => $model->id],
+		'url' => ['delete', 'id' => $model->uuid],
 		'icon' => 'fa fa-trash',
 		'options' => [
 			'class' => 'btn btn-sm btn-danger',
@@ -170,7 +170,7 @@ $showEventLogs = isset($showEventLogs) ? $showEventLogs : Yii::$app->eventLog->e
 							'format' => 'html',
 							'label' => Yii::t('label', 'Created By'),
 							'value' => function (KnowledgeBase $model) {
-								return $model->creator ? Html::a($model->creator->getFullName(), ['/user-manager/user/view', 'id' => $model->creator->id]) : '&mdash;';
+								return $model->creator ? Html::a($model->creator->getFullName(), ['/user-manager/user/view', 'id' => $model->creator->uuid]) : '&mdash;';
 							},
 						],
 						[
@@ -184,7 +184,7 @@ $showEventLogs = isset($showEventLogs) ? $showEventLogs : Yii::$app->eventLog->e
 							'format' => 'html',
 							'label' => Yii::t('label', 'Updated By'),
 							'value' => function (KnowledgeBase $model) {
-								return $model->updater ? Html::a($model->updater->getFullName(), ['/user-manager/user/view', 'id' => $model->updater->id]) : '&mdash;';
+								return $model->updater ? Html::a($model->updater->getFullName(), ['/user-manager/user/view', 'id' => $model->updater->uuid]) : '&mdash;';
 							},
 						],
 						[
@@ -237,7 +237,7 @@ $showEventLogs = isset($showEventLogs) ? $showEventLogs : Yii::$app->eventLog->e
 						'method' => 'POST',
 						'data' => new JsExpression('function (data) {
 							data.model = ' . json_encode(\common\models\KnowledgeBase::class) . '; 
-							data.model_key = "' . $model->id . '";
+							data.model_key = "' . $model->uuid . '";
 						}'),
 						'reloadInterval' => 5 * 60000,
 					],

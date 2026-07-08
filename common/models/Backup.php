@@ -23,7 +23,7 @@ use yii2tech\ar\softdelete\SoftDeleteBehavior;
  * @property User $creator
  * @property User $updater
  */
-class Backup extends CommonActiveRecord
+class Backup extends UuidActiveRecord
 {
 	const STATUS_RUNNING = 1;
 	const STATUS_COMPLETE = 2;

@@ -30,7 +30,7 @@ use yii2tech\ar\softdelete\SoftDeleteBehavior;
  * @property Message $parent
  * @property Message[] $messages
  */
-class Message extends CommonActiveRecord
+class Message extends UuidActiveRecord
 {
     /**
      * {@inheritdoc}

@@ -28,7 +28,7 @@ use yii2tech\ar\softdelete\SoftDeleteBehavior;
  * @property User $creator
  * @property User $updater
  */
-class Setting extends CommonActiveRecord
+class Setting extends UuidActiveRecord
 {
 	const TYPE_APP = 1;
 	const TYPE_USER = 2;

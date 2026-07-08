@@ -37,7 +37,7 @@ use yii2tech\ar\softdelete\SoftDeleteBehavior;
  *
  * @property string $formattedName
  */
-class Feature extends CommonActiveRecord
+class Feature extends UuidActiveRecord
 {
 	const TYPE_BOOLEAN = 1;
 

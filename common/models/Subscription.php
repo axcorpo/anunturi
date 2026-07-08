@@ -57,7 +57,7 @@ use yii2tech\ar\softdelete\SoftDeleteBehavior;
  *
  * @property string $formattedName
  */
-class Subscription extends CommonActiveRecord
+class Subscription extends UuidActiveRecord
 {
 	const STATUS_INACTIVE = 0;
 	const STATUS_ACTIVE = 1;

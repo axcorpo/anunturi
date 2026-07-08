@@ -28,7 +28,7 @@ use yii\helpers\ArrayHelper;
  * @property User $creator
  * @property User $updater
  */
-class UnitOfMeasureCode extends CommonActiveRecord
+class UnitOfMeasureCode extends UuidActiveRecord
 {
     /**
      * {@inheritdoc}

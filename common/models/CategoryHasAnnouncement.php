@@ -13,7 +13,7 @@ use Yii;
  * @property Announcement $announcement
  * @property Category $category
  */
-class CategoryHasAnnouncement extends CommonActiveRecord
+class CategoryHasAnnouncement extends UuidActiveRecord
 {
     /**
      * {@inheritdoc}

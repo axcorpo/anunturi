@@ -31,7 +31,7 @@ use yii2tech\ar\softdelete\SoftDeleteBehavior;
  * @property User $creator
  * @property User $updater
  */
-class Template extends CommonActiveRecord
+class Template extends UuidActiveRecord
 {
     const TYPE_EMAIL = 10;
     const EMAIL_VARIANT_ACCOUNT_ACTIVATION = 101;

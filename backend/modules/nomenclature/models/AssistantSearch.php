@@ -59,13 +59,16 @@ class AssistantSearch extends DataTableAction
 	{
 		return ArrayHelper::toArray($query->all(), [
 			Assistant::class => [
-				'id',
+				'id' => function (Assistant $model) {
+					// Expose the UUID string, never the raw BINARY(16) value
+					return $model->uuid;
+				},
 				'action' => function (Assistant $model) {
 					$actions = [];
 
 					if ($this->requestParams['deleted'] == Assistant::YES) {
 						if (Yii::$app->user->can('restoreAssistant')) {
-							$actions[] = Html::a('<span class="fa fa-undo"></span>', ['restore', 'id' => $model->id], [
+							$actions[] = Html::a('<span class="fa fa-undo"></span>', ['restore', 'id' => $model->uuid], [
 								'class' => 'action-view btn btn-xs btn-success',
 								'title' => Yii::t('common', 'Restore'),
 								'data' => [
@@ -76,7 +79,7 @@ class AssistantSearch extends DataTableAction
 							]);
 						}
 						if (Yii::$app->user->can('deleteAssistant')) {
-							$actions[] = Html::a('<span class="fa fa-trash"></span>', ['delete', 'id' => $model->id], [
+							$actions[] = Html::a('<span class="fa fa-trash"></span>', ['delete', 'id' => $model->uuid], [
 								'class' => 'action-delete btn btn-xs btn-danger',
 								'title' => Yii::t('common', 'Delete Permanently'),
 								'data' => [
@@ -88,7 +91,7 @@ class AssistantSearch extends DataTableAction
 						}
 					} else {
 						if (Yii::$app->user->can('viewAssistant')) {
-							$actions[] = Html::a('<span class="fa fa-eye"></span>', ['view', 'id' => $model->id], [
+							$actions[] = Html::a('<span class="fa fa-eye"></span>', ['view', 'id' => $model->uuid], [
 								'class' => 'action-view btn btn-xs btn-info',
 								'title' => Yii::t('common', 'View'),
 								'data' => [
@@ -97,7 +100,7 @@ class AssistantSearch extends DataTableAction
 							]);
 						}
 						if (Yii::$app->user->can('updateAssistant')) {
-							$actions[] = Html::a('<span class="fa fa-edit"></span>', ['update', 'id' => $model->id], [
+							$actions[] = Html::a('<span class="fa fa-edit"></span>', ['update', 'id' => $model->uuid], [
 								'class' => 'action-update btn btn-xs btn-primary',
 								'title' => Yii::t('common', 'Update'),
 								'data' => [
@@ -106,7 +109,7 @@ class AssistantSearch extends DataTableAction
 							]);
 						}
 						if (Yii::$app->user->can('deleteAssistant') && $model->default == Assistant::NO) {
-							$actions[] = Html::a('<span class="fa fa-trash"></span>', ['delete', 'id' => $model->id], [
+							$actions[] = Html::a('<span class="fa fa-trash"></span>', ['delete', 'id' => $model->uuid], [
 								'class' => 'action-delete btn btn-xs btn-danger',
 								'title' => Yii::t('common', 'Delete'),
 								'data' => [

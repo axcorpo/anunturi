@@ -14,7 +14,7 @@ use Yii;
  *
  * @property User $user
  */
-class Auth extends CommonActiveRecord
+class Auth extends UuidActiveRecord
 {
     /**
      * {@inheritdoc}

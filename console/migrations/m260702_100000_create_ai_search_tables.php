@@ -1,7 +1,7 @@
 <?php
 
+use common\db\Migration;
 use common\helpers\AnnouncementListSearch;
-use yii\db\Migration;
 
 /**
  * AI search infrastructure ported from the licitatii project:
@@ -23,7 +23,7 @@ class m260702_100000_create_ai_search_tables extends Migration
 		}
 
 		$this->createTable('{{%assistant}}', [
-			'id' => $this->primaryKey(),
+			'id' => $this->binaryUuidPrimaryKey(),
 			'name' => $this->string(255)->notNull(),
 			'model' => $this->string(255)->null(),
 			'provider' => $this->tinyInteger()->null(),
@@ -33,8 +33,8 @@ class m260702_100000_create_ai_search_tables extends Migration
 			'max_tokens' => $this->integer()->null(),
 			'type' => $this->tinyInteger()->null(),
 			'default' => $this->tinyInteger(1)->notNull()->defaultValue(0),
-			'created_by' => $this->integer()->null(),
-			'updated_by' => $this->integer()->null(),
+			'created_by' => $this->binaryUuid(false),
+			'updated_by' => $this->binaryUuid(false),
 			'created_at' => $this->dateTime()->null(),
 			'updated_at' => $this->dateTime()->null(),
 			'status' => $this->tinyInteger()->notNull(),
@@ -43,7 +43,7 @@ class m260702_100000_create_ai_search_tables extends Migration
 		$this->createIndex('idx_assistant_deleted', '{{%assistant}}', 'deleted');
 
 		$this->createTable('{{%knowledge_base}}', [
-			'id' => $this->primaryKey(),
+			'id' => $this->binaryUuidPrimaryKey(),
 			'name' => $this->string(255)->notNull(),
 			'description' => $this->text()->null(),
 			'provider' => $this->tinyInteger()->null(),
@@ -53,8 +53,8 @@ class m260702_100000_create_ai_search_tables extends Migration
 			'chunk_overlap' => $this->integer()->defaultValue(200),
 			'tokens_per_file' => $this->integer()->defaultValue(0),
 			'expire_at' => $this->dateTime()->null(),
-			'created_by' => $this->integer()->null(),
-			'updated_by' => $this->integer()->null(),
+			'created_by' => $this->binaryUuid(false),
+			'updated_by' => $this->binaryUuid(false),
 			'created_at' => $this->dateTime()->null(),
 			'updated_at' => $this->dateTime()->null(),
 			'status' => $this->tinyInteger()->notNull(),
@@ -65,8 +65,8 @@ class m260702_100000_create_ai_search_tables extends Migration
 		$this->createIndex('idx_knowledge_base_provider', '{{%knowledge_base}}', 'provider');
 
 		$this->createTable('{{%assistant_knowledge_base}}', [
-			'assistant_id' => $this->integer()->notNull(),
-			'knowledge_base_id' => $this->integer()->notNull(),
+			'assistant_id' => $this->binaryUuid(),
+			'knowledge_base_id' => $this->binaryUuid(),
 			'sort_order' => $this->integer()->defaultValue(0),
 			'created_at' => $this->dateTime()->null(),
 			'PRIMARY KEY ([[assistant_id]], [[knowledge_base_id]])',
@@ -86,10 +86,10 @@ class m260702_100000_create_ai_search_tables extends Migration
 		);
 
 		$this->createTable('{{%ai_conversation}}', [
-			'id' => $this->primaryKey(),
+			'id' => $this->binaryUuidPrimaryKey(),
 			'summary' => $this->string(255)->null(),
 			'openai_conversation_id' => $this->string(255)->null(),
-			'created_by' => $this->integer()->null(),
+			'created_by' => $this->binaryUuid(false),
 			'created_at' => $this->dateTime()->null(),
 			'status' => $this->tinyInteger()->notNull()->defaultValue(0),
 			'deleted' => $this->tinyInteger(1)->defaultValue(0),
@@ -97,15 +97,15 @@ class m260702_100000_create_ai_search_tables extends Migration
 		$this->createIndex('idx_ai_conversation_deleted', '{{%ai_conversation}}', 'deleted');
 
 		$this->createTable('{{%ai_message}}', [
-			'id' => $this->primaryKey(),
-			'conversation_id' => $this->integer()->notNull(),
-			'assistant_id' => $this->integer()->null(),
+			'id' => $this->binaryUuidPrimaryKey(),
+			'conversation_id' => $this->binaryUuid(),
+			'assistant_id' => $this->binaryUuid(false),
 			'role' => $this->string(255)->null(),
 			'content' => 'MEDIUMTEXT NULL DEFAULT NULL',
 			'completed_at' => $this->dateTime()->null(),
 			'incomplete_at' => $this->dateTime()->null(),
 			'incomplete_reason' => $this->string(255)->null(),
-			'created_by' => $this->integer()->null(),
+			'created_by' => $this->binaryUuid(false),
 			'created_at' => $this->dateTime()->null(),
 			'status' => $this->string(255)->null(),
 			'deleted' => $this->tinyInteger(1)->defaultValue(0),
@@ -125,8 +125,8 @@ class m260702_100000_create_ai_search_tables extends Migration
 		);
 
 		$this->createTable('{{%record_vector_index}}', [
-			'id' => $this->primaryKey(),
-			'record_id' => $this->integer()->notNull()->comment('Announcement PK'),
+			'id' => $this->binaryUuidPrimaryKey(),
+			'record_id' => $this->binaryUuid() . " COMMENT 'Announcement PK'",
 			'openai_file_id' => $this->string(128)->notNull(),
 			'vector_store_file_id' => $this->string(128)->null(),
 			'vector_store_id' => $this->string(128)->notNull(),

@@ -13,7 +13,7 @@ use Yii;
  * @property MarketingGroup $marketingGroup
  * @property MarketingRecipient $marketingRecipient
  */
-class MarketingGroupHasRecipient extends CommonActiveRecord
+class MarketingGroupHasRecipient extends UuidActiveRecord
 {
     /**
      * {@inheritdoc}
