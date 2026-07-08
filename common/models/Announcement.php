@@ -84,7 +84,7 @@ use yii\db\Exception;
  * @property User $creator
  * @property User $updater
  */
-class Announcement extends CommonActiveRecord
+class Announcement extends UuidActiveRecord
 {
     public const STATUS_PENDING = 2;
     public const STATUS_REJECTED = 3;
@@ -636,13 +636,21 @@ class Announcement extends CommonActiveRecord
 	}
 
 	/**
-	 * Two-tier LIKE search condition for the public listing.
+	 * Two-tier search condition for the public listing.
 	 *
 	 * The main haystack is the denormalized `announcement_translation.search_text` column
 	 * (title + description + keywords + content, HTML-stripped + diacritic-folded — see
 	 * {@see AnnouncementTranslation::beforeSave()}). The user query is normalized via the same
 	 * pipeline ({@see \common\helpers\AnnouncementListSearch::normalize()}) so "gradina" matches
 	 * "grădină" and HTML tags / entities in the source body don't pollute matches.
+	 *
+	 * `search_text` is matched through the FULLTEXT index (`ftx_announcement_translation_search_text`)
+	 * with `MATCH ... AGAINST (... IN BOOLEAN MODE)` — every token required, as a word prefix —
+	 * instead of full-scan `LIKE '%term%'`. Tokens the index cannot serve (shorter than
+	 * `innodb_ft_min_token_size` or InnoDB built-in stopwords) are ANDed in as LIKE fallbacks,
+	 * and a search with no indexable token keeps the original all-LIKE behaviour. The only
+	 * semantic difference vs. LIKE: tokens match at word starts, no longer inside words
+	 * ("beton" still matches "betoniera", but no longer "autobeton").
 	 *
 	 * The remaining columns (ct.name / a.locality / a.county) are matched on the raw user input —
 	 * those fields are short and rarely contain HTML, but diacritics there are NOT folded.
@@ -656,24 +664,39 @@ class Announcement extends CommonActiveRecord
 	public static function listSearchSqlLikeOr(string $search): array
 	{
 		$normalized = \common\helpers\AnnouncementListSearch::normalize($search);
+		$tokens = \common\helpers\AnnouncementListSearch::tokenize($search);
 
 		$conds = ['OR'];
-		if ($normalized !== '') {
+
+		// search_text tier — FULLTEXT boolean mode, LIKE only as fallback
+		list($indexable, $unindexable) = \common\helpers\AnnouncementListSearch::partitionFulltextTokens($tokens);
+		if ($indexable) {
+			$searchTextCond = ['AND', new Expression(
+				'MATCH ([[at]].[[search_text]]) AGAINST (:announcementFtQuery IN BOOLEAN MODE)',
+				[':announcementFtQuery' => \common\helpers\AnnouncementListSearch::booleanFulltextQuery($indexable)]
+			)];
+			foreach ($unindexable as $token) {
+				$searchTextCond[] = ['LIKE', 'at.search_text', $token];
+			}
+			$conds[] = count($searchTextCond) === 2 ? $searchTextCond[1] : $searchTextCond;
+		} elseif ($normalized !== '') {
+			// No FULLTEXT-indexable token (all too short / stopwords): original LIKE behaviour
 			$conds[] = ['LIKE', 'at.search_text', $normalized];
+			if (count($tokens) > 1) {
+				$andSearchText = ['AND'];
+				foreach ($tokens as $token) {
+					$andSearchText[] = ['LIKE', 'at.search_text', $token];
+				}
+				$conds[] = $andSearchText;
+			}
 		}
+
+		// Raw-column tier — unchanged
 		$rawColumns = ['ct.name', 'a.locality', 'a.county'];
 		foreach ($rawColumns as $col) {
 			$conds[] = ['LIKE', $col, $search];
 		}
-
-		$tokens = \common\helpers\AnnouncementListSearch::tokenize($search);
 		if (count($tokens) > 1) {
-			$andSearchText = ['AND'];
-			foreach ($tokens as $token) {
-				$andSearchText[] = ['LIKE', 'at.search_text', $token];
-			}
-			$conds[] = $andSearchText;
-
 			foreach ($rawColumns as $col) {
 				$and = ['AND'];
 				foreach ($tokens as $token) {

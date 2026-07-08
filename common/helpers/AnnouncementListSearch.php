@@ -95,6 +95,54 @@ final class AnnouncementListSearch
 		return $tokens;
 	}
 
+	/**
+	 * Splits tokens into those the InnoDB FULLTEXT index can serve and those it cannot.
+	 *
+	 * A token is NOT indexable when it is shorter than `innodb_ft_min_token_size`
+	 * (default 3 — adjust here if that server variable is changed) or when it is on
+	 * InnoDB's built-in FULLTEXT stopword list (words never indexed, so a required
+	 * `+word*` term would wrongly match nothing). Unindexable tokens keep the LIKE
+	 * fallback — see Announcement::listSearchSqlLikeOr().
+	 *
+	 * @param string[] $tokens Output of {@see tokenize()}.
+	 * @return array{0: string[], 1: string[]} `[indexable, unindexable]`
+	 */
+	public static function partitionFulltextTokens(array $tokens): array
+	{
+		// INFORMATION_SCHEMA.INNODB_FT_DEFAULT_STOPWORD (MySQL 5.7/8.0)
+		static $innodbStopwords = [
+			'a' => 1, 'about' => 1, 'an' => 1, 'are' => 1, 'as' => 1, 'at' => 1, 'be' => 1, 'by' => 1,
+			'com' => 1, 'de' => 1, 'en' => 1, 'for' => 1, 'from' => 1, 'how' => 1, 'i' => 1, 'in' => 1,
+			'is' => 1, 'it' => 1, 'la' => 1, 'of' => 1, 'on' => 1, 'or' => 1, 'that' => 1, 'the' => 1,
+			'this' => 1, 'to' => 1, 'was' => 1, 'what' => 1, 'when' => 1, 'where' => 1, 'who' => 1,
+			'will' => 1, 'with' => 1, 'und' => 1, 'www' => 1,
+		];
+		$indexable = [];
+		$unindexable = [];
+		foreach ($tokens as $token) {
+			if (mb_strlen($token, 'UTF-8') >= 3 && !isset($innodbStopwords[$token])) {
+				$indexable[] = $token;
+			} else {
+				$unindexable[] = $token;
+			}
+		}
+		return [$indexable, $unindexable];
+	}
+
+	/**
+	 * Builds the boolean-mode MATCH ... AGAINST query: every token required, as a word prefix
+	 * (`+beton* +celular*`). Tokens come from {@see tokenize()} so they contain only letters
+	 * and digits — no boolean-mode operators to escape.
+	 *
+	 * @param string[] $tokens
+	 */
+	public static function booleanFulltextQuery(array $tokens): string
+	{
+		return implode(' ', array_map(static function (string $token): string {
+			return '+' . $token . '*';
+		}, $tokens));
+	}
+
 	private static function stripDiacritics(string $s): string
 	{
 		return strtr($s, [
